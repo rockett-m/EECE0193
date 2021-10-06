@@ -7,50 +7,7 @@ import math
 import argparse
 import subprocess
 import re
-#
-# global sample_cache
-# sample_cache = """
-# # Sample configuration for SRAM cache
-#
-# -DesignTarget: cache
-#
-# -CacheAccessMode: Sequential
-#
-# -OptimizationTarget: ReadEDP
-#
-# -EnablePruning: Yes
-#
-# -ProcessNode: 22
-#
-# -Capacity(KB): 256
-# -WordWidth(bit): 512
-# -Associativity(
-# for cache only): 16
-#
-# -DeviceRoadmap: LSTP
-#
-# -LocalWireType: LocalAggressive
-# -LocalWireRepeaterType: RepeatedNone
-#
-# -LocalWireUseLowSwing: No
-#
-# -GlobalWireType: GlobalAggressive
-# -GlobalWireRepeaterType: RepeatedNone
-#
-# -GlobalWireUseLowSwing: No
-#
-# -Routing: H - tree
-#
-# -InternalSensing: true
-#
-# -MemoryCellInputFile:./ cell_defs / SRAM.cell
-#
-# -Temperature(K): 350
-#
-# -BufferDesignOptimization: latency
-#
-# -UseCactiAssumption: Yes
-# """
+import csv
 
 
 """ Run
@@ -183,6 +140,63 @@ def run_nvsim():
                 pass
 
 
+def send_to_csv():
+
+    struct = []
+
+    for root, dirs, files in os.walk(cache_path):
+        # print("root", root)
+        for file in files: # cache file
+            if re.search(r".out", file): # out files only
+
+                data = []
+
+                configuration = file.split('.out')[0] # size + assoc
+                data.append(configuration)
+
+                results_file = os.path.join(cache_path, file)
+                with open(results_file, 'r') as fo:
+
+                    for line in fo:
+                        read_access_time_result = re.match(r"( - Cache Hit Latency )\s*=\s*([0-9a-z.]+)(\s*)", line)
+                        read_energy_result = re.match(r"( - Cache Hit Dynamic Energy )\s*\=\s*([0-9a-zA-Z.]+)( per access\s*)", line)
+
+                        access_time = ""; read_energy = ""
+
+                        if read_access_time_result:
+                            access_time = read_access_time_result.group(2)[:-2]
+                            data.append(access_time)
+                        elif read_energy_result:
+                            read_energy = read_energy_result.group(2)[:-2]
+                            data.append(read_energy)
+                        else:
+                            pass
+
+                    struct.append(data)
+                fo.close()
+
+    return struct
+
+
+def write_csv(struct):
+
+    data_file = os.path.join(cache_path, "data.csv")
+    with open(data_file, 'w') as fd:
+
+        csvwriter = csv.writer(fd, quotechar='"', escapechar='\\')
+
+        headers = ["cache size(KB) and associativity", "read access time (ns)", "read energy (nJ)"]
+        csvwriter.writerow(headers)
+
+        for line in struct:
+            csvwriter.writerow(line)
+            # print(line)
+
+    fd.close()
+
+    print(f'\ncsv file written: {data_file}\n')
+
+
 if __name__ == "__main__":
 
     t0 = time.perf_counter()
@@ -191,9 +205,13 @@ if __name__ == "__main__":
 
     setup(args)
 
-    create_cache_files()
+    # create_cache_files()
 
-    run_nvsim()
+    # run_nvsim()
+
+    struct = send_to_csv()
+
+    write_csv(struct)
 
     t1 = time.perf_counter()
 
