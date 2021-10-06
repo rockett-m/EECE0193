@@ -117,7 +117,7 @@ def create_cache_files():
 
     for cap in [16, 32, 64, 128, 256, 512, 1024, 2048]:  # 16kB to 2MB cache size
 
-        for assoc in range(1,17):  # 1 to 16 way associative
+        for assoc in [1, 2, 4, 8, 16]:  # 1 to 16 way associative
 
             gen_file = f'SRAM_cache_{cap}_{assoc}.cfg'
             output_file = os.path.join(cache_path, gen_file)
@@ -125,7 +125,7 @@ def create_cache_files():
 
                 with open(sample_cache, 'r') as fi:
                     for line in fi: # sample_cache
-                    
+
                         result_cap = re.match(r"(-Capacity\s\(KB\): )(\d+)(\s*)", line)
                         result_assoc = re.match(r"(-Associativity\s\(for cache only\): )(\d+)(\s*)", line)
 
@@ -159,21 +159,29 @@ def run_nvsim():
 
                 full_file = os.path.join(cache_path, file)
 
-                try:
-                    # cmd = nvsim_path + " " + full_file + " > " + output_file
-                    cmd = f'{nvsim_path} {full_file} > {output_file}'
-                    # cmd = f'{nvsim_path} {full_file}'
-                    print("\nnvsim cmd:\n\t", cmd)
-                    stdout, stderr, exit_code = shell_exec(cmd)
+                if not os.path.exists(output_file):
+                    try:
+                        cmd = f'{nvsim_path} {full_file} > {output_file}'
+                        print("\nnvsim cmd:\n\t", cmd)
+                        shell_exec(cmd)
+                        print("\ncache results:\n\t", output_file)
+                    except:
+                        print("\ncouldn't execute nv sim cmd\n")
 
-                    print("\ncache results:\n\t", output_file)
-                    # print("\ncache results:\n\t", stdout)
-                    time.sleep(8)
-                    # break
-                except:
-                    print("\ncouldn't execute nv sim cmd\n")
+                else: # file size test
+                    cmd_size = "ls -l " + output_file + " | awk '{print $5}'"
+                    size = shell_exec(cmd_size)[0]
+                    if int(size) < 6000:
+                        try:
+                            cmd = f'{nvsim_path} {full_file} > {output_file}'
+                            print("\nnvsim cmd:\n\t", cmd)
+                            shell_exec(cmd)
+                            print("\ncache results:\n\t", output_file)
+                        except:
+                            print("\ncouldn't execute nv sim cmd\n")
             else:
                 pass
+
 
 if __name__ == "__main__":
 
