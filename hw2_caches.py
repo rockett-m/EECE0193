@@ -288,17 +288,13 @@ def send_to_csv_part2():
                 with open(results_file, 'r') as fo:
 
                     for line in fo:
-                        read_access_time_result = re.match(r"( - Cache Hit Latency )\s*=\s*([0-9a-z.]+)(\s*)", line)
-                        read_energy_result = re.match(r"( - Cache Hit Dynamic Energy )\s*\=\s*([0-9a-zA-Z.]+)( per access\s*)", line)
+                        power_leakage_result = re.match(r"( - Cache Total Leakage Power)\s*=\s*([0-9A-Za-z.]+)(\s*)", line)
 
-                        access_time = ""; read_energy = ""
+                        power_leak = ""
 
-                        if read_access_time_result:
-                            access_time = read_access_time_result.group(2)[:-2]
-                            data.append(access_time)
-                        elif read_energy_result:
-                            read_energy = read_energy_result.group(2)[:-2]
-                            data.append(read_energy)
+                        if power_leakage_result:
+                            power_leak = power_leakage_result.group(2)[:-2]
+                            data.append(power_leak)
                         else:
                             pass
 
@@ -308,15 +304,14 @@ def send_to_csv_part2():
     return struct
 
 
-
-def write_csv(struct):
+def write_csv_part2(struct):
 
     data_file = os.path.join(cache_path, "data_part2.csv")
     with open(data_file, 'w') as fd:
 
         csvwriter = csv.writer(fd, quotechar='"', escapechar='\\')
 
-        headers = ["cache size(KB) and associativity", "read access time (ns)", "read energy (nJ)"]
+        headers = ["cache size(KB) and associativity", "total leakage power (mW)"]
         csvwriter.writerow(headers)
 
         for line in struct:
@@ -349,9 +344,9 @@ if __name__ == "__main__":
 
     run_nvsim_part2()
 
-    # struct_part2 = send_to_csv_part2()
+    struct_part2 = send_to_csv_part2()
 
-    # write_csv(struct_part2)
+    write_csv_part2(struct_part2)
 
     t1 = time.perf_counter()
 
