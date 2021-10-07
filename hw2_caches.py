@@ -178,7 +178,7 @@ def send_to_csv():
     return struct
 
 
-def write_csv(struct):
+def write_csv_part1(struct):
 
     data_file = os.path.join(cache_path, "data.csv")
     with open(data_file, 'w') as fd:
@@ -324,6 +324,129 @@ def write_csv_part2(struct):
 
 
 
+def create_ram_files():
+
+    sample_cache = os.path.join(cache_path, "SRAM_cache.cfg")
+
+    for cap in [16, 32, 64, 128, 256, 512, 1024, 2048]:  # 16kB to 2MB cache size
+
+        for assoc in [1, 2, 4, 8, 16]:  # 1 to 16 way associative
+
+            gen_file = f'SRAM_cache_{cap}_{assoc}.cfg'
+            output_file = os.path.join(cache_path, gen_file)
+            with open(output_file, 'w') as fo:
+
+                with open(sample_cache, 'r') as fi:
+                    for line in fi: # sample_cache
+
+                        result_des = re.match(r"(-DesignTarget: )(.+)(\s*)", line)
+                        result_opt = re.match(r"(-OptimizationTarget: )(.+)(\s*)", line)
+
+                        if result_des:
+                            design = result_des.group(1) + "RAM" + result_des.group(3)
+                            fo.write(design)
+                        elif result_opt:
+                            optimization = result_opt.group(1) + "Area" + result_opt.group(3)
+                            fo.write(optimization)
+                        else:
+                            fo.write(line)
+                fi.close()
+            fo.close()
+
+
+
+def run_nvsim_part3():
+
+    nvsim_path = os.path.realpath("nvsim")
+    # print("\nnvsim_path:\n\t", nvsim_path)
+    path_test(nvsim_path)
+
+    for root, dirs, files in os.walk(cache_path):
+        # print("root", root)
+        for file in files: # cache file
+            if re.search(r".cfg", file): # cfg files only
+
+                output = file.split('.cfg')[0] + ".out"
+                output_file = os.path.join(cache_path, output)
+
+                full_file = os.path.join(cache_path, file)
+
+                if not os.path.exists(output_file):
+                    try:
+                        cmd = f'{nvsim_path} {full_file} > {output_file}'
+                        print("\nnvsim cmd:\n\t", cmd)
+                        shell_exec(cmd)
+                        print("\ncache results:\n\t", output_file)
+                    except:
+                        print("\ncouldn't execute nv sim cmd\n")
+
+                else: # file size test
+                    cmd_size = "ls -l " + output_file + " | awk '{print $5}'"
+                    size = shell_exec(cmd_size)[0]
+                    if int(size) < 6000:
+                        try:
+                            cmd = f'{nvsim_path} {full_file} > {output_file}'
+                            print("\nnvsim cmd:\n\t", cmd)
+                            shell_exec(cmd)
+                            print("\ncache results:\n\t", output_file)
+                        except:
+                            print("\ncouldn't execute nv sim cmd\n")
+            else:
+                pass
+
+
+def send_to_csv_part3():
+
+    struct = []
+
+    for root, dirs, files in os.walk(cache_path):
+        # print("root", root)
+        for file in files: # cache file
+            if re.search(r".out", file): # out files only
+
+                data = []
+
+                configuration = file.split('.out')[0] # size + assoc
+                data.append(configuration)
+
+                results_file = os.path.join(cache_path, file)
+                with open(results_file, 'r') as fo:
+
+                    for line in fo:
+                        area_result = re.match(r"(Cell Area \(F\^2\)\s*:\s*)([0-9.]+)\s*\.+", line)
+
+                        area = ""
+
+                        if area_result:
+                            area = area_result.group(2)
+                            data.append(area)
+                        else:
+                            pass
+
+                    struct.append(data)
+                fo.close()
+
+    return struct
+
+
+def write_csv_part3(struct):
+
+    data_file = os.path.join(cache_path, "data_part3.csv")
+    with open(data_file, 'w') as fd:
+
+        csvwriter = csv.writer(fd, quotechar='"', escapechar='\\')
+
+        headers = ["cache size(KB) and associativity", "total area (F^2)"]
+        csvwriter.writerow(headers)
+
+        for line in struct:
+            csvwriter.writerow(line)
+
+    fd.close()
+
+    print(f'\ncsv file written: {data_file}\n')
+
+
 if __name__ == "__main__":
 
     t0 = time.perf_counter()
@@ -332,21 +455,34 @@ if __name__ == "__main__":
 
     setup(args)
 
+    # comment / uncomment functions as need be
+    
     # create_cache_files()
 
     # run_nvsim_part1()
 
     # struct_part1 = send_to_csv_part1()
 
-    # write_csv(struct_part1)
+    # write_csv_part1(struct_part1)
 
-    memory_cell_edits()
 
-    run_nvsim_part2()
+    # memory_cell_edits()
 
-    struct_part2 = send_to_csv_part2()
+    # run_nvsim_part2()
 
-    write_csv_part2(struct_part2)
+    # struct_part2 = send_to_csv_part2()
+
+    # write_csv_part2(struct_part2)
+
+
+    # create_ram_files()
+
+    # run_nvsim_part3()
+
+    struct_part3 = send_to_csv_part3()
+
+    write_csv_part3(struct_part3)
+
 
     t1 = time.perf_counter()
 
