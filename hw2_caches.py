@@ -100,7 +100,7 @@ def create_cache_files():
             fo.close()
 
 
-def run_nvsim():
+def run_nvsim_part1():
 
     nvsim_path = os.path.realpath("nvsim")
     # print("\nnvsim_path:\n\t", nvsim_path)
@@ -197,6 +197,138 @@ def write_csv(struct):
     print(f'\ncsv file written: {data_file}\n')
 
 
+
+def memory_cell_edits():
+
+    sample_cache = os.path.join(cache_path, "SRAM_cache.cfg")
+    # cell_def_path = os.path.join(HOME, "cell_defs")
+
+    for cap in [16, 32, 64, 128, 256, 512, 1024, 2048]:  # 16kB to 2MB cache size
+
+        for cell_def in ["RRAM", "SRAM", "STTRAM"]:
+
+            gen_file = f'SRAM_cache_{cap}_{cell_def}.cfg'
+            output_file = os.path.join(cache_path, gen_file)
+            with open(output_file, 'w') as fo:
+
+                with open(sample_cache, 'r') as fi:
+                    for line in fi: # sample_cache
+
+                        result_cap = re.match(r"(-Capacity\s\(KB\): )(\d+)(\s*)", line)
+                        # result_assoc = re.match(r"(-Associativity\s\(for cache only\): )(\d+)(\s*)", line)
+                        result_mem = re.match(r"(-MemoryCellInputFile: ./cell_defs/)([A-Z]+)(.cell\s*)", line)
+
+                        if result_cap:
+                            capacity = result_cap.group(1) + str(cap) + result_cap.group(3)
+                            fo.write(capacity)
+                        elif result_mem:
+                            memory = result_mem.group(1) + str(cell_def) + result_mem.group(3)
+                            fo.write(memory)
+                        else:
+                            fo.write(line)
+                fi.close()
+            fo.close()
+
+
+def run_nvsim_part2():
+
+    nvsim_path = os.path.realpath("nvsim")
+    # print("\nnvsim_path:\n\t", nvsim_path)
+    path_test(nvsim_path)
+
+    for root, dirs, files in os.walk(cache_path):
+        # print("root", root)
+        for file in files: # cache file
+            if re.search(r".cfg", file): # cfg files only
+
+                output = file.split('.cfg')[0] + ".out"
+                output_file = os.path.join(cache_path, output)
+
+                full_file = os.path.join(cache_path, file)
+
+                if not os.path.exists(output_file):
+                    try:
+                        cmd = f'{nvsim_path} {full_file} > {output_file}'
+                        print("\nnvsim cmd:\n\t", cmd)
+                        shell_exec(cmd)
+                        print("\ncache results:\n\t", output_file)
+                    except:
+                        print("\ncouldn't execute nv sim cmd\n")
+
+                else: # file size test
+                    cmd_size = "ls -l " + output_file + " | awk '{print $5}'"
+                    size = shell_exec(cmd_size)[0]
+                    if int(size) < 6000:
+                        try:
+                            cmd = f'{nvsim_path} {full_file} > {output_file}'
+                            print("\nnvsim cmd:\n\t", cmd)
+                            shell_exec(cmd)
+                            print("\ncache results:\n\t", output_file)
+                        except:
+                            print("\ncouldn't execute nv sim cmd\n")
+            else:
+                pass
+
+
+def send_to_csv_part2():
+
+    struct = []
+
+    for root, dirs, files in os.walk(cache_path):
+        # print("root", root)
+        for file in files: # cache file
+            if re.search(r".out", file): # out files only
+
+                data = []
+
+                configuration = file.split('.out')[0] # size + assoc
+                data.append(configuration)
+
+                results_file = os.path.join(cache_path, file)
+                with open(results_file, 'r') as fo:
+
+                    for line in fo:
+                        read_access_time_result = re.match(r"( - Cache Hit Latency )\s*=\s*([0-9a-z.]+)(\s*)", line)
+                        read_energy_result = re.match(r"( - Cache Hit Dynamic Energy )\s*\=\s*([0-9a-zA-Z.]+)( per access\s*)", line)
+
+                        access_time = ""; read_energy = ""
+
+                        if read_access_time_result:
+                            access_time = read_access_time_result.group(2)[:-2]
+                            data.append(access_time)
+                        elif read_energy_result:
+                            read_energy = read_energy_result.group(2)[:-2]
+                            data.append(read_energy)
+                        else:
+                            pass
+
+                    struct.append(data)
+                fo.close()
+
+    return struct
+
+
+
+def write_csv(struct):
+
+    data_file = os.path.join(cache_path, "data_part2.csv")
+    with open(data_file, 'w') as fd:
+
+        csvwriter = csv.writer(fd, quotechar='"', escapechar='\\')
+
+        headers = ["cache size(KB) and associativity", "read access time (ns)", "read energy (nJ)"]
+        csvwriter.writerow(headers)
+
+        for line in struct:
+            csvwriter.writerow(line)
+            # print(line)
+
+    fd.close()
+
+    print(f'\ncsv file written: {data_file}\n')
+
+
+
 if __name__ == "__main__":
 
     t0 = time.perf_counter()
@@ -207,11 +339,19 @@ if __name__ == "__main__":
 
     # create_cache_files()
 
-    # run_nvsim()
+    # run_nvsim_part1()
 
-    struct = send_to_csv()
+    # struct_part1 = send_to_csv_part1()
 
-    write_csv(struct)
+    # write_csv(struct_part1)
+
+    memory_cell_edits()
+
+    run_nvsim_part2()
+
+    # struct_part2 = send_to_csv_part2()
+
+    # write_csv(struct_part2)
 
     t1 = time.perf_counter()
 
