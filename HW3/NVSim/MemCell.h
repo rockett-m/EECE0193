@@ -88,12 +88,6 @@ public:
 	double setPulse;		/* Set pulse duration (ns) */
 	double setEnergy;       /* Set energy per cell (pJ) */
 
-	// MLC MORGAN ADD
-	// int    numBitsPerCell;
-	int    numLevelsMemCell;
-	bool   isMLC;
-	// MLC MORGAN ADD
-
 	CellAccessType accessType;	/* Cell access type: CMOS, BJT, or diode */
 
 	/* Optional properties */

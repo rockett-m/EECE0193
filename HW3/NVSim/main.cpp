@@ -67,8 +67,27 @@ Wire *localWire;
 Wire *globalWire;
 
 void applyConstraint();
-// int calcCapMLC(double capacity, int numLevelsPerCell);
-double calcCapMLC(double capacity, int numBitsPerCell);
+
+
+// MLC MORGAN ADD
+long long calcCapMLC(long long capacity, int numLevelsMemCell) {
+
+	cout << "cap before" << capacity << endl;
+	cout << "numLevelsMemCell" << numLevelsMemCell << endl;
+	capacity = (long long)capacity / log2(numLevelsMemCell);
+	cout << "cap after" << capacity << endl;
+
+	// physical capacity != logical capacity /
+	for (int i=0; i<20; i++) {
+		if (capacity <= exp2(i)) {
+			capacity = exp2(i);
+			break;
+		}
+	}
+	return (long long)capacity;
+}
+// MLC MORGAN ADD
+
 
 int main(int argc, char *argv[])
 {
@@ -205,10 +224,10 @@ int main(int argc, char *argv[])
 			}
 			capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
 			// MORGAN ADD
-			if (cell->isMLC == true) {
-				capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
+			if (inputParameter->isMLC == true) {
+				capacity = calcCapMLC(capacity, inputParameter->numLevelsMemCell);
 			}
-			// MORGAN ADD
+			// // MORGAN ADD
 			associativity = inputParameter->associativity;
 			CALCULATE(tagBank, tag);
 			if (!tagBank->invalid) {
@@ -263,8 +282,9 @@ int main(int argc, char *argv[])
 	/* adjust cache data array parameters according to the access mode */
 	capacity = (long long)inputParameter->capacity * 8;
 	// MORGAN ADD
-	if (cell->isMLC == true) {
-		capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
+	// cout << inputParameter->isMLC << endl;
+	if (inputParameter->isMLC == true) {
+		capacity = calcCapMLC(capacity, inputParameter->numLevelsMemCell);
 	}
 	// MORGAN ADD
 	blockSize = inputParameter->wordWidth;
@@ -529,16 +549,3 @@ void applyConstraint() {
 }
 
 
-// MLC MORGAN ADD
-double calcCapMLC(double capacity, int numLevelsMemCell) {
-
-	capacity = capacity / log2(numLevelsMemCell);
-
-	// physical capacity != logical capacity /
-	for (int i=0; i<20; i++) {
-		if (capacity <= exp2(i)) {
-			return exp2(i);
-		}
-	}
-}
-// MLC MORGAN ADD

@@ -34,9 +34,5 @@
 
 -ReadFloating: false
 
-// Morgan ADD
-//-numBitsPerCell      = 3;
--numLevelsMemCell    = 8;
--isMLC: true
-// Morgan ADD
-
+//-numLevelsMemCell: 8
+//-isMLC: 1
