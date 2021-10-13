@@ -3,19 +3,19 @@
 * Department of Computer Science and Engineering, The Pennsylvania State University
 * Exascale Computing Lab, Hewlett-Packard Company
 * All rights reserved.
-* 
-* This source code is part of NVSim - An area, timing and power model for both 
-* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM, 
+*
+* This source code is part of NVSim - An area, timing and power model for both
+* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM,
 * SLC NAND Flash). The source code is free and you can redistribute and/or modify it
 * by providing that the following conditions are met:
-* 
+*
 *  1) Redistributions of source code must retain the above copyright notice,
 *     this list of conditions and the following disclaimer.
-* 
+*
 *  2) Redistributions in binary form must reproduce the above copyright notice,
 *     this list of conditions and the following disclaimer in the documentation
 *     and/or other materials provided with the distribution.
-* 
+*
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,9 +26,9 @@
 * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
-* Author list: 
-*   Cong Xu	    ( Email: czx102 at psu dot edu 
+*
+* Author list:
+*   Cong Xu	    ( Email: czx102 at psu dot edu
 *                     Website: http://www.cse.psu.edu/~czx102/ )
 *   Xiangyu Dong    ( Email: xydong at cse dot psu dot edu
 *                     Website: http://www.cse.psu.edu/~xydong/ )
@@ -67,6 +67,8 @@ Wire *localWire;
 Wire *globalWire;
 
 void applyConstraint();
+// int calcCapMLC(double capacity, int numLevelsPerCell);
+double calcCapMLC(double capacity, int numBitsPerCell);
 
 int main(int argc, char *argv[])
 {
@@ -202,6 +204,11 @@ int main(int argc, char *argv[])
 						* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
 			}
 			capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
+			// MORGAN ADD
+			if (cell->isMLC == true) {
+				capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
+			}
+			// MORGAN ADD
 			associativity = inputParameter->associativity;
 			CALCULATE(tagBank, tag);
 			if (!tagBank->invalid) {
@@ -255,6 +262,11 @@ int main(int argc, char *argv[])
 
 	/* adjust cache data array parameters according to the access mode */
 	capacity = (long long)inputParameter->capacity * 8;
+	// MORGAN ADD
+	if (cell->isMLC == true) {
+		capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
+	}
+	// MORGAN ADD
 	blockSize = inputParameter->wordWidth;
 	associativity = inputParameter->associativity;
 	if (inputParameter->designTarget == cache) {
@@ -281,6 +293,7 @@ int main(int argc, char *argv[])
 		blockSize = inputParameter->pageSize;
 		associativity = 1;
 	}
+
 
 	INITIAL_BASIC_WIRE;
 	BIGFOR {
@@ -484,8 +497,11 @@ void applyConstraint() {
 		//exit(-1);
 	}
 	if (cell->memCellType == MLCNAND) {
+		cout << "[HW3] MLC NAND flash model" << endl;
+		/*
 		cout << "[ERROR] MLC NAND flash model is still under development" << endl;
 		exit(-1);
+		*/
 	}
 
 	if (inputParameter->designTarget != cache && inputParameter->associativity > 1) {
@@ -511,3 +527,18 @@ void applyConstraint() {
 
 	/* TO-DO: more rules to add here */
 }
+
+
+// MLC MORGAN ADD
+double calcCapMLC(double capacity, int numLevelsMemCell) {
+
+	capacity = capacity / log2(numLevelsMemCell);
+
+	// physical capacity != logical capacity /
+	for (int i=0; i<20; i++) {
+		if (capacity <= exp2(i)) {
+			return exp2(i);
+		}
+	}
+}
+// MLC MORGAN ADD
