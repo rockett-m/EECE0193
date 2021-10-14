@@ -72,10 +72,10 @@ void applyConstraint();
 // MLC MORGAN ADD
 long long calcCapMLC(long long capacity, int numLevelsMemCell) {
 
-	cout << "cap before" << capacity << endl;
-	cout << "numLevelsMemCell" << numLevelsMemCell << endl;
+	cout << "\nnumLevelsMemCell " << numLevelsMemCell << endl;
+	cout << "\ncap input " << capacity << " " << endl;
 	capacity = (long long)capacity / log2(numLevelsMemCell);
-	cout << "cap after" << capacity << endl;
+	cout << "cap after log " << capacity << " " << endl;
 
 	// physical capacity != logical capacity /
 	for (int i=0; i<20; i++) {
@@ -84,6 +84,8 @@ long long calcCapMLC(long long capacity, int numLevelsMemCell) {
 			break;
 		}
 	}
+	cout << "cap after rounding " << capacity << " " << endl;
+
 	return (long long)capacity;
 }
 // MLC MORGAN ADD

@@ -33,6 +33,3 @@
 //-VoltageDropAccessDevice (V): 0.5
 
 -ReadFloating: false
-
-//-numLevelsMemCell: 8
-//-isMLC: 1
