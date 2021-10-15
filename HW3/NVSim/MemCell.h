@@ -120,6 +120,7 @@ public:
 	double flashEraseTime;			/* The flash erase time, Unit: s */
 	double flashProgramTime;		/* The SLC flash program time, Unit: s */
 	double gateCouplingRatio;		/* The ratio of control gate to total floating gate capacitance */
+
 };
 
 #endif /* MEMCELL_H_ */

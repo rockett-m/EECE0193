@@ -88,6 +88,7 @@ MemCell::MemCell() {
 	resistanceOffAtReadVoltage = 0;
 	resistanceOnAtHalfReadVoltage = 0;
 	resistanceOffAtHalfReadVoltage = 0;
+
 }
 
 MemCell::~MemCell() {

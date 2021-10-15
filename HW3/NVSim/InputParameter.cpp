@@ -41,6 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 InputParameter::InputParameter() {
 	// TODO Auto-generated constructor stub
@@ -113,17 +114,38 @@ InputParameter::InputParameter() {
 	pageSize = 0;
 	flashBlockSize = 0;
 
-	// MORGAN
-	numLevelsMemCell = 3;
-	isMLC = true;
-	// MORGAN
-
 	outputFilePrefix = "output";	/* Default output file name */
+
+	// MORGAN
+	numLevelsMemCell = 4;
+	isMLC = true;
+	isParallel = false;
+	// MORGAN
 }
 
 InputParameter::~InputParameter() {
 	// TODO Auto-generated destructor stub
 }
+
+// MLC MORGAN ADD
+long long calcCapMLC(long long capacity, int numLevelsMemCell) {
+
+	cout << "\nnumLevelsMemCell " << numLevelsMemCell << endl;
+	cout << "\ncap input " << capacity << " " << endl;
+	capacity = capacity / log2(numLevelsMemCell);
+	cout << "cap after log " << capacity << " " << endl;
+
+	// physical capacity != logical capacity /
+	for (int i=0; i<20; i++) {
+		if (capacity <= pow(2, i)) {
+			capacity = pow(2, i);
+			break;
+		}
+	}
+	cout << "cap after rounding " << capacity << "\n" << endl;
+	return (long long)capacity;
+}
+// MLC MORGAN ADD
 
 void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
 	FILE *fp = fopen(inputFile.c_str(), "r");
@@ -189,18 +211,27 @@ void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
 			long cap;
 			sscanf(line, "-Capacity (B): %ld", &cap);
 			capacity = cap;
+			if (isMLC == true) {
+				capacity = calcCapMLC(capacity, numLevelsMemCell);
+			}
 			continue;
 		}
 		if (!strncmp("-Capacity (KB)", line, strlen("-Capacity (KB)"))) {
 			long cap;
 			sscanf(line, "-Capacity (KB): %ld", &cap);
 			capacity = cap * 1024;
+			if (isMLC == true) {
+				capacity = calcCapMLC(capacity, numLevelsMemCell);
+			}
 			continue;
 		}
 		if (!strncmp("-Capacity (MB)", line, strlen("-Capacity (MB)"))) {
 			long cap;
 			sscanf(line, "-Capacity (MB): %ld", &cap);
 			capacity = cap * 1024*1024;
+			if (isMLC == true) {
+				capacity = calcCapMLC(capacity, numLevelsMemCell);
+			}
 			continue;
 		}
 		if (!strncmp("-WordWidth", line, strlen("-WordWidth"))) {

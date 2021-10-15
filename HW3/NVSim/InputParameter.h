@@ -133,6 +133,7 @@ public:
 	// MORGAN
 	int numLevelsMemCell;
 	bool isMLC;
+	bool isParallel;
 	// MORGAN
 };
 

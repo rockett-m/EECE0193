@@ -69,28 +69,6 @@ Wire *globalWire;
 void applyConstraint();
 
 
-// MLC MORGAN ADD
-long long calcCapMLC(long long capacity, int numLevelsMemCell) {
-
-	cout << "\nnumLevelsMemCell " << numLevelsMemCell << endl;
-	cout << "\ncap input " << capacity << " " << endl;
-	capacity = (long long)capacity / log2(numLevelsMemCell);
-	cout << "cap after log " << capacity << " " << endl;
-
-	// physical capacity != logical capacity /
-	for (int i=0; i<20; i++) {
-		if (capacity <= exp2(i)) {
-			capacity = exp2(i);
-			break;
-		}
-	}
-	cout << "cap after rounding " << capacity << " " << endl;
-
-	return (long long)capacity;
-}
-// MLC MORGAN ADD
-
-
 int main(int argc, char *argv[])
 {
 	cout << fixed << setprecision(3);
@@ -149,12 +127,31 @@ int main(int argc, char *argv[])
 	cell->ReadCellFromFile(inputParameter->fileMemCell);
 //	cell->CellScaling(inputParameter->processNode);
 
+	// MORGAN ADD
+	cout << "\ncap input beginning: " << inputParameter->capacity << " bytes" << endl; // MORGAN
+
+	// long long capacity_phys;
+	// capacity_phys = calcCapMLC(inputParameter->capacity, cell->numLevelsMemCell);
+	// cout << "\ncap input phys: " << capacity_phys << " bytes" << endl; // MORGAN
+	// MORGAN ADD
+
 	ofstream outputFile;
 	string outputFileName;
 	if (inputParameter->optimizationTarget == full_exploration) {
 		stringstream temp;
+
+		// MORGAN ADD
+		// if (cell->isMLC == true) {
+			// temp << inputParameter->outputFilePrefix << "_" << capacity_phys / 1024 << "K_" << inputParameter->wordWidth
+			// 		<< "_" << inputParameter->associativity;
 		temp << inputParameter->outputFilePrefix << "_" << inputParameter->capacity / 1024 << "K_" << inputParameter->wordWidth
 				<< "_" << inputParameter->associativity;
+		// } else {
+			// temp << inputParameter->outputFilePrefix << "_" << inputParameter->capacity / 1024 << "K_" << inputParameter->wordWidth
+					// << "_" << inputParameter->associativity;
+		// }
+		// MORGAN ADD
+
 		if (inputParameter->internalSensing)
 			temp << "_IN";
 		else
@@ -203,12 +200,27 @@ int main(int argc, char *argv[])
 
 	inputParameter->PrintInputParameter();
 
+	// // MORGAN ADD
+	// cout << "\ncap input beginning: " << inputParameter->capacity << " bytes" << endl; // MORGAN
+
+	// long long capacity_phys;
+	// capacity_phys = calcCapMLC(inputParameter->capacity, cell->numLevelsMemCell);
+	// cout << "\ncap input phys: " << capacity_phys << " bytes" << endl; // MORGAN
+	// // MORGAN ADD
+
 	/* search tag first */
 	if (inputParameter->designTarget == cache) {
 		/* need to design the tag array */
 		REDUCE_SEARCH_SIZE;
 		/* calculate the tag configuration */
-		int numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
+		int numDataSet = 0;
+		// if (cell->isMLC == true) {
+			// numDataSet = capacity_phys * 8 / inputParameter->wordWidth / inputParameter->associativity;
+		numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
+		// } else {
+			// numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
+		// }
+
 		int numIndexBit = (int)(log2(numDataSet) + 0.1);
 		int numOffsetBit = (int)(log2(inputParameter->wordWidth / 8) + 0.1);
 		INITIAL_BASIC_WIRE;
@@ -224,12 +236,16 @@ int main(int argc, char *argv[])
 				blockSize = (blockSize / (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn) + 1)
 						* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
 			}
+
+			// MORGAN
+			// if (cell->isMLC == true) {
+				// capacity = (long long)capacity_phys * 8 / inputParameter->wordWidth * blockSize;
 			capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
-			// MORGAN ADD
-			if (inputParameter->isMLC == true) {
-				capacity = calcCapMLC(capacity, inputParameter->numLevelsMemCell);
-			}
-			// // MORGAN ADD
+			// } else {
+				// capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
+			// }
+			// MORGAN
+
 			associativity = inputParameter->associativity;
 			CALCULATE(tagBank, tag);
 			if (!tagBank->invalid) {
@@ -240,6 +256,8 @@ int main(int argc, char *argv[])
 			}
 			delete tagBank;
 		}
+
+		cout << "\ncap input after math: " << capacity << " bytes\n" << endl; // MORGAN
 
 		if (numSolution > 0) {
 			Bank * trialBank;
@@ -282,13 +300,16 @@ int main(int argc, char *argv[])
 	}
 
 	/* adjust cache data array parameters according to the access mode */
+	// MORGAN ADD
+	// if (cell->isMLC == true) {
+		// capacity = (long long)capacity_phys * 8;
+		// capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
 	capacity = (long long)inputParameter->capacity * 8;
+	// } else {
+		// capacity = (long long)inputParameter->capacity * 8;
+	// }
 	// MORGAN ADD
-	// cout << inputParameter->isMLC << endl;
-	if (inputParameter->isMLC == true) {
-		capacity = calcCapMLC(capacity, inputParameter->numLevelsMemCell);
-	}
-	// MORGAN ADD
+
 	blockSize = inputParameter->wordWidth;
 	associativity = inputParameter->associativity;
 	if (inputParameter->designTarget == cache) {
@@ -519,11 +540,12 @@ void applyConstraint() {
 		//exit(-1);
 	}
 	if (cell->memCellType == MLCNAND) {
-		cout << "[HW3] MLC NAND flash model" << endl;
-		/*
-		cout << "[ERROR] MLC NAND flash model is still under development" << endl;
-		exit(-1);
-		*/
+		cout << "\n[HW3] MLC NAND flash model\n" << endl;
+		// cout << "[ERROR] MLC NAND flash model is still under development" << endl;
+		// exit(-1);
+	}
+	if (cell->memCellType == memristor) {
+		cout << "\n[HW3] memristor flash model\n" << endl;
 	}
 
 	if (inputParameter->designTarget != cache && inputParameter->associativity > 1) {
