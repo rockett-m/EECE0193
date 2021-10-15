@@ -127,30 +127,15 @@ int main(int argc, char *argv[])
 	cell->ReadCellFromFile(inputParameter->fileMemCell);
 //	cell->CellScaling(inputParameter->processNode);
 
-	// MORGAN ADD
 	cout << "\ncap input beginning: " << inputParameter->capacity << " bytes" << endl; // MORGAN
-
-	// long long capacity_phys;
-	// capacity_phys = calcCapMLC(inputParameter->capacity, cell->numLevelsMemCell);
-	// cout << "\ncap input phys: " << capacity_phys << " bytes" << endl; // MORGAN
-	// MORGAN ADD
 
 	ofstream outputFile;
 	string outputFileName;
 	if (inputParameter->optimizationTarget == full_exploration) {
 		stringstream temp;
 
-		// MORGAN ADD
-		// if (cell->isMLC == true) {
-			// temp << inputParameter->outputFilePrefix << "_" << capacity_phys / 1024 << "K_" << inputParameter->wordWidth
-			// 		<< "_" << inputParameter->associativity;
 		temp << inputParameter->outputFilePrefix << "_" << inputParameter->capacity / 1024 << "K_" << inputParameter->wordWidth
 				<< "_" << inputParameter->associativity;
-		// } else {
-			// temp << inputParameter->outputFilePrefix << "_" << inputParameter->capacity / 1024 << "K_" << inputParameter->wordWidth
-					// << "_" << inputParameter->associativity;
-		// }
-		// MORGAN ADD
 
 		if (inputParameter->internalSensing)
 			temp << "_IN";
@@ -200,27 +185,12 @@ int main(int argc, char *argv[])
 
 	inputParameter->PrintInputParameter();
 
-	// // MORGAN ADD
-	// cout << "\ncap input beginning: " << inputParameter->capacity << " bytes" << endl; // MORGAN
-
-	// long long capacity_phys;
-	// capacity_phys = calcCapMLC(inputParameter->capacity, cell->numLevelsMemCell);
-	// cout << "\ncap input phys: " << capacity_phys << " bytes" << endl; // MORGAN
-	// // MORGAN ADD
-
 	/* search tag first */
 	if (inputParameter->designTarget == cache) {
 		/* need to design the tag array */
 		REDUCE_SEARCH_SIZE;
 		/* calculate the tag configuration */
-		int numDataSet = 0;
-		// if (cell->isMLC == true) {
-			// numDataSet = capacity_phys * 8 / inputParameter->wordWidth / inputParameter->associativity;
-		numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
-		// } else {
-			// numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
-		// }
-
+		int numDataSet = inputParameter->capacity * 8 / inputParameter->wordWidth / inputParameter->associativity;
 		int numIndexBit = (int)(log2(numDataSet) + 0.1);
 		int numOffsetBit = (int)(log2(inputParameter->wordWidth / 8) + 0.1);
 		INITIAL_BASIC_WIRE;
@@ -237,15 +207,7 @@ int main(int argc, char *argv[])
 						* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
 			}
 
-			// MORGAN
-			// if (cell->isMLC == true) {
-				// capacity = (long long)capacity_phys * 8 / inputParameter->wordWidth * blockSize;
 			capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
-			// } else {
-				// capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
-			// }
-			// MORGAN
-
 			associativity = inputParameter->associativity;
 			CALCULATE(tagBank, tag);
 			if (!tagBank->invalid) {
@@ -299,17 +261,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* adjust cache data array parameters according to the access mode */
-	// MORGAN ADD
-	// if (cell->isMLC == true) {
-		// capacity = (long long)capacity_phys * 8;
-		// capacity = calcCapMLC(capacity, cell->numLevelsMemCell);
 	capacity = (long long)inputParameter->capacity * 8;
-	// } else {
-		// capacity = (long long)inputParameter->capacity * 8;
-	// }
-	// MORGAN ADD
-
 	blockSize = inputParameter->wordWidth;
 	associativity = inputParameter->associativity;
 	if (inputParameter->designTarget == cache) {
