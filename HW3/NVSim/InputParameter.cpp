@@ -114,7 +114,7 @@ InputParameter::InputParameter() {
 	flashBlockSize = 0;
 
 	// MORGAN
-	numLevelsMemCell = 8;
+	numLevelsMemCell = 3;
 	isMLC = true;
 	// MORGAN
 
