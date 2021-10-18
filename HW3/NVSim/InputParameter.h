@@ -132,6 +132,7 @@ public:
 
 	// MORGAN
 	int numLevelsMemCell;
+	int numBitsPerCell;
 	bool isMLC;
 	bool isParallel;
 	// MORGAN

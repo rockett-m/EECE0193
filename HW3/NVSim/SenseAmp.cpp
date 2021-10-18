@@ -3,19 +3,19 @@
 * Department of Computer Science and Engineering, The Pennsylvania State University
 * Exascale Computing Lab, Hewlett-Packard Company
 * All rights reserved.
-* 
-* This source code is part of NVSim - An area, timing and power model for both 
-* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM, 
+*
+* This source code is part of NVSim - An area, timing and power model for both
+* volatile (e.g., SRAM, DRAM) and non-volatile memory (e.g., PCRAM, STT-RAM, ReRAM,
 * SLC NAND Flash). The source code is free and you can redistribute and/or modify it
 * by providing that the following conditions are met:
-* 
+*
 *  1) Redistributions of source code must retain the above copyright notice,
 *     this list of conditions and the following disclaimer.
-* 
+*
 *  2) Redistributions in binary form must reproduce the above copyright notice,
 *     this list of conditions and the following disclaimer in the documentation
 *     and/or other materials provided with the distribution.
-* 
+*
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,9 +26,9 @@
 * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
-* Author list: 
-*   Cong Xu	    ( Email: czx102 at psu dot edu 
+*
+* Author list:
+*   Cong Xu	    ( Email: czx102 at psu dot edu
 *                     Website: http://www.cse.psu.edu/~czx102/ )
 *   Xiangyu Dong    ( Email: xydong at cse dot psu dot edu
 *                     Website: http://www.cse.psu.edu/~xydong/ )
@@ -111,6 +111,14 @@ void SenseAmp::CalculateArea() {
 		width *= numColumn;
 
 		area = height * width;
+
+		// MORGAN
+		if (inputParameter->isParallel == true) {
+			area *= (inputParameter->numLevelsMemCell - 1); // 2^n-1
+		}
+		// cout << std::scientific << "sense amp area: " << area << endl;
+		// MORGAN
+
 	}
 }
 
@@ -154,6 +162,16 @@ void SenseAmp::CalculateLatency(double _rampInput) {	/* _rampInput is actually n
 				+ CalculateTransconductance(W_SENSE_P * tech->featureSize, PMOS, *tech);
 		double tau = capLoad / gm;
 		readLatency += tau * log(tech->vdd / senseVoltage);
+
+		// MORGAN
+		if (inputParameter->isParallel != true) {
+			// readLatency *= 2;
+		// } else {
+			readLatency *= (inputParameter->numLevelsMemCell - 1);
+		}
+		// cout << "read latency: " << readLatency << endl;
+		// MORGAN
+
 	}
 }
 

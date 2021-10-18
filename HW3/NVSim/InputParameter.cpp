@@ -118,8 +118,9 @@ InputParameter::InputParameter() {
 
 	// MORGAN
 	numLevelsMemCell = 4;
-	isMLC = true;
-	isParallel = false;
+	numBitsPerCell = log2(numLevelsMemCell);
+	isMLC = true; // should be impossible to do MLC and SRAM
+	isParallel = true;
 	// MORGAN
 }
 

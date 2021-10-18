@@ -68,6 +68,8 @@ Wire *globalWire;
 
 void applyConstraint();
 
+void InputParamsCheck();
+
 
 int main(int argc, char *argv[])
 {
@@ -184,6 +186,8 @@ int main(int argc, char *argv[])
 	long long numSolution = 0;
 
 	inputParameter->PrintInputParameter();
+
+	InputParamsCheck(); // MORGAN
 
 	/* search tag first */
 	if (inputParameter->designTarget == cache) {
@@ -525,3 +529,36 @@ void applyConstraint() {
 }
 
 
+void InputParamsCheck() {
+	if (((inputParameter->numLevelsMemCell == 4) or (inputParameter->numLevelsMemCell == 2)) \
+		and (inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/RRAM.cell") \
+		and (cell->memCellType == memristor))
+		// and (!strcmp(cell->memCellType, memristor)))
+	{
+		cout << "\nvalid inputs\n" << endl;
+		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
+		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
+		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
+		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		cout << "\ncontinuing\n" << endl;
+	}
+	else if ((inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
+	{
+		cout << "\nerror; cannot be MLC and SRAM\n" << endl;
+		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
+		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
+		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
+		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		exit (EXIT_FAILURE);
+	}
+	else
+	{
+		cout << "\ncase not supported for HW3; example below is supported\n" << endl;
+		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
+		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
+		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
+		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		cout << "exiting...\n" << endl;
+		exit (EXIT_FAILURE);
+	}
+}
