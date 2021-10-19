@@ -117,10 +117,10 @@ InputParameter::InputParameter() {
 	outputFilePrefix = "output";	/* Default output file name */
 
 	// MORGAN
-	numLevelsMemCell = 4;
+	numLevelsMemCell = 2;
 	numBitsPerCell = log2(numLevelsMemCell);
-	isMLC = true; // should be impossible to do MLC and SRAM
-	isParallel = true;
+	isMLC = "false"; // should be impossible to do MLC and SRAM
+	isParallel = "false";
 	// MORGAN
 }
 
@@ -212,7 +212,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
 			long cap;
 			sscanf(line, "-Capacity (B): %ld", &cap);
 			capacity = cap;
-			if (isMLC == true) {
+			if (isMLC == "true") {
 				capacity = calcCapMLC(capacity, numLevelsMemCell);
 			}
 			continue;
@@ -221,7 +221,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
 			long cap;
 			sscanf(line, "-Capacity (KB): %ld", &cap);
 			capacity = cap * 1024;
-			if (isMLC == true) {
+			if (isMLC == "true") {
 				capacity = calcCapMLC(capacity, numLevelsMemCell);
 			}
 			continue;
@@ -230,7 +230,7 @@ void InputParameter::ReadInputParameterFromFile(const std::string & inputFile) {
 			long cap;
 			sscanf(line, "-Capacity (MB): %ld", &cap);
 			capacity = cap * 1024*1024;
-			if (isMLC == true) {
+			if (isMLC == "true") {
 				capacity = calcCapMLC(capacity, numLevelsMemCell);
 			}
 			continue;

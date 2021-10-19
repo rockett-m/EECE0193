@@ -70,6 +70,8 @@ void applyConstraint();
 
 void InputParamsCheck();
 
+void PrintParams();
+
 
 int main(int argc, char *argv[])
 {
@@ -531,34 +533,39 @@ void applyConstraint() {
 
 void InputParamsCheck() {
 	if (((inputParameter->numLevelsMemCell == 4) or (inputParameter->numLevelsMemCell == 2)) \
-		and (inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/RRAM.cell") \
-		and (cell->memCellType == memristor))
-		// and (!strcmp(cell->memCellType, memristor)))
+		and (inputParameter->isMLC == "true") and (inputParameter->fileMemCell == "./cell_defs/RRAM.cell") \
+		and (cell->memCellType == 5)) // memristor
+		// and (strcmp(cell->memCellType, memristor)))
 	{
 		cout << "\nvalid inputs\n" << endl;
-		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
-		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
-		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
-		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		PrintParams();
 		cout << "\ncontinuing\n" << endl;
 	}
-	else if ((inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
+	else if ((inputParameter->isMLC == "true") and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
 	{
 		cout << "\nerror; cannot be MLC and SRAM\n" << endl;
-		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
-		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
-		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
-		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		PrintParams();
 		exit (EXIT_FAILURE);
+	}
+	else if ((inputParameter->isMLC != "true") and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
+	{
+		cout << "\nvalid inputs\n" << endl;
+		PrintParams();
+		cout << "\ncontinuing\n" << endl;
 	}
 	else
 	{
-		cout << "\ncase not supported for HW3; example below is supported\n" << endl;
-		cout << "inputParameter->numLevelsMemCell == 2,4: " << inputParameter->numLevelsMemCell << endl;
-		cout << "inputParameter->isMLC == true: " << inputParameter->isMLC << endl;
-		cout << "inputParameter->fileMemCell == \"RRAM\": " << inputParameter->fileMemCell << endl;
-		cout << "cell->memCellType == memristor: " << cell->memCellType << endl;
+		cout << "\ncase not supported for HW3; guidelines below are supported\n" << endl;
+		PrintParams();
 		cout << "exiting...\n" << endl;
 		exit (EXIT_FAILURE);
 	}
+}
+
+
+void PrintParams() {
+	cout << "inputParameter->numLevelsMemCell == [2, 4]: " << inputParameter->numLevelsMemCell << endl;
+	cout << "inputParameter->isMLC == [true, false]: " << inputParameter->isMLC << endl;
+	cout << "inputParameter->fileMemCell == \"[SRAM, RRAM]\": " << inputParameter->fileMemCell << endl;
+	cout << "cell->memCellType == [memristor (5)]: " << cell->memCellType << endl;
 }
