@@ -113,9 +113,12 @@ void SenseAmp::CalculateArea() {
 		area = height * width;
 
 		// MORGAN
-		if (inputParameter->isParallel == "true") {
+		if (inputParameter->isParallel == true) {
+			// cout << "prev area: " << area << endl;
 			area *= (inputParameter->numLevelsMemCell - 1); // 2^n-1
+			// cout << "new area in: " << area << endl;
 		}
+		// cout << "new area out: " << area << endl;
 		// cout << std::scientific << "sense amp area: " << area << endl;
 		// MORGAN
 
@@ -164,9 +167,7 @@ void SenseAmp::CalculateLatency(double _rampInput) {	/* _rampInput is actually n
 		readLatency += tau * log(tech->vdd / senseVoltage);
 
 		// MORGAN
-		if (inputParameter->isParallel != "true") {
-			// readLatency *= 2;
-		// } else {
+		if (inputParameter->isParallel != true) {
 			readLatency *= (inputParameter->numLevelsMemCell - 1);
 		}
 		// cout << "read latency: " << readLatency << endl;

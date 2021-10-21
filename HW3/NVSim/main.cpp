@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 						* (numActiveMatPerRow * numActiveMatPerColumn * numActiveSubarrayPerRow * numActiveSubarrayPerColumn);
 			}
 
-			capacity = (long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize;
+			capacity = ((long long)inputParameter->capacity * 8 / inputParameter->wordWidth * blockSize) / inputParameter->numBitsPerCell;
 			associativity = inputParameter->associativity;
 			CALCULATE(tagBank, tag);
 			if (!tagBank->invalid) {
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	capacity = (long long)inputParameter->capacity * 8;
+	capacity = ((long long)inputParameter->capacity * 8) / inputParameter->numBitsPerCell;;
 	blockSize = inputParameter->wordWidth;
 	associativity = inputParameter->associativity;
 	if (inputParameter->designTarget == cache) {
@@ -533,7 +533,7 @@ void applyConstraint() {
 
 void InputParamsCheck() {
 	if (((inputParameter->numLevelsMemCell == 4) or (inputParameter->numLevelsMemCell == 2)) \
-		and (inputParameter->isMLC == "true") and (inputParameter->fileMemCell == "./cell_defs/RRAM.cell") \
+		and (inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/RRAM.cell") \
 		and (cell->memCellType == 5)) // memristor
 		// and (strcmp(cell->memCellType, memristor)))
 	{
@@ -541,13 +541,13 @@ void InputParamsCheck() {
 		PrintParams();
 		cout << "\ncontinuing\n" << endl;
 	}
-	else if ((inputParameter->isMLC == "true") and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
+	else if ((inputParameter->isMLC == true) and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
 	{
 		cout << "\nerror; cannot be MLC and SRAM\n" << endl;
 		PrintParams();
 		exit (EXIT_FAILURE);
 	}
-	else if ((inputParameter->isMLC != "true") and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
+	else if ((inputParameter->isMLC != true) and (inputParameter->fileMemCell == "./cell_defs/SRAM.cell"))
 	{
 		cout << "\nvalid inputs\n" << endl;
 		PrintParams();

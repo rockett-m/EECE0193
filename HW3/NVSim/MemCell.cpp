@@ -43,7 +43,8 @@
 
 MemCell::MemCell() {
 	// TODO Auto-generated constructor stub
-	memCellType         = PCRAM;
+	// memCellType         = PCRAM;
+	memCellType         = memristor;
 	area                = 0;
 	aspectRatio         = 0;
 	resistanceOn        = 0;
