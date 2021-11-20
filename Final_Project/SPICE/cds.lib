@@ -1,0 +1,2 @@
+SOFTINCLUDE /usr/cots/cadence/7.x/IC618/share/cdssetup/cds.lib
+DEFINE eNVM /ee/193EMT/models/eNVM

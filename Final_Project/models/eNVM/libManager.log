@@ -1,0 +1,21 @@
+\o Program:		@(#)$CDS: libManager version 6.1.8 - CAT37 10/29/2019 10:20 (sjfqos016) $
+\o Sub version:		sub-version  s074 
+\o Arguments:		-unmapped -mpssession virtuoso14573 -mpshost vm-hw07 
+\o Working Directory:	vm-hw07:/h/mdonato/asu_nvm/eNVM
+\o 64-bit offsets
+\o Qt version: 		5.9.1
+\o changeWorkingDir("/h/mdonato/asu_nvm/eNVM") unnecessary.
+\o ddSetForcedLib("") unnecessary.
+\o Log file is "/h/mdonato/asu_nvm/eNVM/libManager.log".
+\o Opening libManager window.
+\a nrSetWindowVisibility(cdsLibManager "show")
+\o MPS service: map window
+\o Library Manager customization server connected.
+\a nrSetCurrentWindow(cdsLibManager)
+\a nrResizeWindow(cdsLibManager list(1255 111 1186 648))
+\a nrSetCurrentWindow(cdsLibManager)
+\a nrSetWindowVisibility(cdsLibManager "hide")
+\a _lmgrCloseIconify("cdsLibManager" 1)
+\o MPS service: shutdown
+\o libManager is exiting.
+\a exit(0)
