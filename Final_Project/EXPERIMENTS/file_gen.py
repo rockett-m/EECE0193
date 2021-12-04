@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 # sample of how to run
-# python3 file_gen.py --treeroot /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
 # --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim/
 
-# python3 file_gen.py --treeroot /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
 # --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny/
 
 import os
@@ -61,31 +61,29 @@ def pretty_time(t0: float, t1: float):
 
 def cli_parse():
     parser = argparse.ArgumentParser(description="cli parser")
-    parser.add_argument("--treeroot", action="store", dest="treeroot", help="root folder of all code")
+    parser.add_argument("--tree_root", action="store", dest="tree_root", help="root folder of all code")
     parser.add_argument("--if", "--input_folder", action="store", dest="input_folder", help="input cfg files")
-    # parser.add_argument("--of", "--output_folder", action="store", dest="output_folder", help="output generated files")
+    parser.add_argument("--tool_path", action="store", dest="tool_path", help="root dir of nvsim or destiny with executable")
     parser.add_argument("--debug", action="store_true", help="debug mode (prints paths etc.)")
     args = parser.parse_args()
     return args
 
 
 def setup_env(args):
-    treeroot = args.treeroot
+    tree_root = args.tree_root
     input_folder = args.input_folder
-    # output_folder = args.output_folder
+    tool_path = args.tool_path
     debug = args.debug
 
-    # for x in [ treeroot, input_folder, output_folder ]:
-    for x in [ treeroot, input_folder ]:
+    for x in [ tree_root, input_folder, tool_path ]:
         path_test(x)
 
     print(f'\nHOME: {HOME}')
-    print(f'\ntreeroot: {treeroot}')
+    print(f'\ntree_root: {tree_root}')
     print(f'\ninput_folder: {input_folder}')
-    # print(f'\noutput_folder: {output_folder}\n')
+    print(f'\ntool_path: {tool_path}\n')
 
-    # return treeroot, input_folder, output_folder
-    return treeroot, input_folder, debug
+    return tree_root, input_folder, tool_path, debug
 
 
 def build_cfg_data(software, opt_target, capacity, cell):
@@ -150,7 +148,9 @@ def build_cfg_data(software, opt_target, capacity, cell):
     return cfg_data
 
 
-def create_cfg_files(treeroot, input_folder, debug):
+def create_cfg_files(tree_root, input_folder, debug):
+
+    filelist = []
 
     for iso in [ "iso_area", "iso_capacity" ]:
         iso_path = os.path.join(input_folder, iso)
@@ -190,7 +190,7 @@ def create_cfg_files(treeroot, input_folder, debug):
                     fc.close()
 
                     if debug:
-                        print(f'\ntreeroot: {treeroot}\n'
+                        print(f'\ntree_root: {tree_root}\n'
                               f'\ninput_folder: {input_folder}\n'
                               f'\niso_path: {iso_path}\n'
                               f'\nopt_path: {opt_path}\n'
@@ -199,6 +199,33 @@ def create_cfg_files(treeroot, input_folder, debug):
                               f'\ncfg_file: {cfg_file}\n')
                         sys.exit()
 
+                    filelist.append(cfg_file)
+
+    return filelist
+
+
+def run_simulations(filelist, tool_path, debug):
+
+    run_count = 0
+    for cfg_file in filelist:
+        output_log = cfg_file[:-3] + "out" # strip "cfg" and replace with "txt
+        if debug: print(output_log)
+
+        sim_cmd = ""
+
+        " cd ~/NVSim && ./nvsim ~/EXPERIMENTS/Input/Destiny/iso_capacity/Area/PCRAM/512KB/512KB.cfg >" \
+        " ~/EXPERIMENTS/Input/Destiny/iso_capacity/Area/PCRAM/512KB/512KB.out"
+        if re.search(r"NVSim", input_folder, re.I):
+            sim_cmd = "cd " + tool_path + " && ./nvsim " + cfg_file + " > " + output_log
+        elif re.search(r"Destiny", input_folder, re.I):
+            sim_cmd = "cd " + tool_path + " && ./destiny " + cfg_file + " > " + output_log
+        else:
+            print("expecting NVsim or Destiny in the input folder path")
+            sys.exit()
+
+        print(sim_cmd); os.system(sim_cmd)
+        run_count += 1; print("run count: ", run_count)
+
 
 if __name__ == "__main__":
 
@@ -206,9 +233,13 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    treeroot, input_folder, debug = setup_env(args)
+    tree_root, input_folder, tool_path, debug = setup_env(args)
 
-    create_cfg_files(treeroot, input_folder, debug) # calls build_cfg_data()
+    # generates all cfg files for either NVSim or Destiny
+    filelist = create_cfg_files(tree_root, input_folder, debug) # calls build_cfg_data()
+
+    # run actual simulations for either NVSim or Destiny
+    run_simulations(filelist, tool_path, debug)
 
     # unique folder and cfg file and output file in specific test case dir
     # plotting like matplotlib
