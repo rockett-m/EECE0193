@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+# sample of how to run
+# python3 file_gen.py --treeroot /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim/
+
+# python3 file_gen.py --treeroot /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny/
+
 import os
 import sys
 import time
@@ -81,33 +88,65 @@ def setup_env(args):
     return treeroot, input_folder, debug
 
 
-def build_cfg_data(opt_target, capacity, cell):
-    cfg_data = (f'\n'
-                f'-DesignTarget: RAM\n'
-                f'-OptimizationTarget: {opt_target}\n'
-                f'-EnablePruning: Yes\n'
-                f'\n'
-                f'-ProcessNode: 22\n'
-                f'-Capacity (KB): {capacity}\n'
-                f'-WordWidth (bit): 128\n'
-                f'\n'
-                f'-DeviceRoadmap: LSTP\n'
-                f'-LocalWireType: LocalAggressive\n'
-                f'-LocalWireRepeaterType: RepeatedNone\n'
-                f'\n'
-                f'-LocalWireUseLowSwing: No\n'
-                f'-GlobalWireType: GlobalAggressive\n'
-                f'-GlobalWireRepeaterType: RepeatedNone\n'
-                f'-GlobalWireUseLowSwing: No\n'
-                f'\n'
-                f'-Routing: H-tree\n'
-                f'-InternalSensing: true\n'
-                f'-MemoryCellInputFile: ./cell_defs/{cell}.cell\n'
-                f'\n'
-                f'-Temperature (K): 350\n'
-                f'-BufferDesignOptimization: latency\n'
-                f'-UseCactiAssumption: Yes\n\n')
+def build_cfg_data(software, opt_target, capacity, cell):
+    cfg_data = ""
+    if software == "NVSim":
+        cfg_data = (f'\n'
+                    f'-DesignTarget: RAM\n'
+                    f'-OptimizationTarget: {opt_target}\n'
+                    f'-EnablePruning: Yes\n'
+                    f'\n'
+                    f'-ProcessNode: 22\n'
+                    f'-Capacity (KB): {capacity}\n'
+                    f'-WordWidth (bit): 128\n'
+                    f'\n'
+                    f'-DeviceRoadmap: LSTP\n'
+                    f'-LocalWireType: LocalAggressive\n'
+                    f'-LocalWireRepeaterType: RepeatedNone\n'
+                    f'\n'
+                    f'-LocalWireUseLowSwing: No\n'
+                    f'-GlobalWireType: GlobalAggressive\n'
+                    f'-GlobalWireRepeaterType: RepeatedNone\n'
+                    f'-GlobalWireUseLowSwing: No\n'
+                    f'\n'
+                    f'-Routing: H-tree\n'
+                    f'-InternalSensing: true\n'
+                    f'-MemoryCellInputFile: ./cell_defs/{cell}.cell\n'
+                    f'\n'
+                    f'-Temperature (K): 350\n'
+                    f'-BufferDesignOptimization: latency\n'
+                    f'-UseCactiAssumption: Yes\n\n')
 
+    elif software == "Destiny":
+        cfg_data = (f'\n'
+                    f'-DesignTarget: RAM\n'
+                    f'-OptimizationTarget: {opt_target}\n'
+                    f'-EnablePruning: Yes\n'
+                    f'\n'
+                    f'-ProcessNode: 22\n'
+                    f'-Capacity(KB): {capacity}\n'
+                    f'-WordWidth(bit): 128\n'
+                    f'\n'
+                    f'-DeviceRoadmap: LSTP\n'
+                    f'-LocalWireType: LocalAggressive\n'
+                    f'-LocalWireRepeaterType: RepeatedNone\n'
+                    f'\n'
+                    f'-LocalWireUseLowSwing: No\n'
+                    f'-GlobalWireType: GlobalAggressive\n'
+                    f'-GlobalWireRepeaterType: RepeatedNone\n'
+                    f'-GlobalWireUseLowSwing: No\n'
+                    f'\n'
+                    f'-Routing: H-tree\n'
+                    f'-InternalSensing: true\n'
+                    f'-MemoryCellInputFile: config/sample_{cell}.cell\n'
+                    f'\n'
+                    f'-Temperature(K): 350\n'
+                    f'-BufferDesignOptimization: latency\n'
+                    f'-StackedDieCount: 1\n\n')
+
+    else:
+        print("need to enter NVSim or Destiny for cfg file generation")
+        sys.exit()
     return cfg_data
 
 
@@ -136,10 +175,17 @@ def create_cfg_files(treeroot, input_folder, debug):
                         cmd_chmod = "chmod 750 " + cfg_file; os.system(cmd_chmod)
                         path_test(cfg_file)
 
-                    cfg_data = build_cfg_data(opt_target, capacity, cell)
+                    cfg_data = ""
+                    if re.search(r"NVSim", input_folder, re.I):
+                        cfg_data = build_cfg_data("NVSim", opt_target, capacity, cell)
+                    elif re.search(r"Destiny", input_folder, re.I):
+                        cfg_data = build_cfg_data("Destiny", opt_target, capacity, cell)
+                    else:
+                        print("expecting NVsim or Destiny in the input folder path")
+                        sys.exit()
 
                     with open(cfg_file, 'w') as fc:
-                        print(cfg_file)
+                        if debug: print(cfg_file)
                         fc.write(cfg_data)
                     fc.close()
 
@@ -160,10 +206,8 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    # treeroot, input_folder, output_folder = setup_env(args)
     treeroot, input_folder, debug = setup_env(args)
 
-    # main(treeroot, input_folder, output_folder)
     create_cfg_files(treeroot, input_folder, debug) # calls build_cfg_data()
 
     # unique folder and cfg file and output file in specific test case dir
