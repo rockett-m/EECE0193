@@ -89,10 +89,11 @@ def setup_env(args):
 def build_cfg_data(software, opt_target, capacity, cell):
     cfg_data = ""
     if software == "NVSim":
-        cfg_data = (f'\n'
-                    f'-DesignTarget: RAM\n'
+        cfg_data = (f'-DesignTarget: RAM\n'
                     f'-OptimizationTarget: {opt_target}\n'
                     f'-EnablePruning: Yes\n'
+                    f'-Associativity (for cache only): 16\n'
+                    f'-CacheAccessMode: Sequential\n'
                     f'\n'
                     f'-ProcessNode: 22\n'
                     f'-Capacity (KB): {capacity}\n'
@@ -116,10 +117,11 @@ def build_cfg_data(software, opt_target, capacity, cell):
                     f'-UseCactiAssumption: Yes\n\n')
 
     elif software == "Destiny":
-        cfg_data = (f'\n'
-                    f'-DesignTarget: RAM\n'
+        cfg_data = (f'-DesignTarget: RAM\n'
                     f'-OptimizationTarget: {opt_target}\n'
                     f'-EnablePruning: Yes\n'
+                    f'-Associativity (for cache only): 16\n'
+                    f'-CacheAccessMode: Sequential\n'
                     f'\n'
                     f'-ProcessNode: 22\n'
                     f'-Capacity(KB): {capacity}\n'
@@ -136,7 +138,7 @@ def build_cfg_data(software, opt_target, capacity, cell):
                     f'\n'
                     f'-Routing: H-tree\n'
                     f'-InternalSensing: true\n'
-                    f'-MemoryCellInputFile: config/sample_{cell}.cell\n'
+                    f'-MemoryCellInputFile: ./config/sample_{cell}.cell\n'
                     f'\n'
                     f'-Temperature(K): 350\n'
                     f'-BufferDesignOptimization: latency\n'
