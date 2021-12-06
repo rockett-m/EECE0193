@@ -87,13 +87,12 @@ def setup_env(args):
 
 
 def build_cfg_data(software, opt_target, capacity, cell):
+
     cfg_data = ""
-    if software == "NVSim":
+    if software == "NVSim" or software == "Destiny":
         cfg_data = (f'-DesignTarget: RAM\n'
                     f'-OptimizationTarget: {opt_target}\n'
                     f'-EnablePruning: Yes\n'
-                    f'-Associativity (for cache only): 16\n'
-                    f'-CacheAccessMode: Sequential\n'
                     f'\n'
                     f'-ProcessNode: 22\n'
                     f'-Capacity (KB): {capacity}\n'
@@ -115,34 +114,32 @@ def build_cfg_data(software, opt_target, capacity, cell):
                     f'-Temperature (K): 350\n'
                     f'-BufferDesignOptimization: latency\n'
                     f'-UseCactiAssumption: Yes\n\n')
-
-    elif software == "Destiny":
-        cfg_data = (f'-DesignTarget: RAM\n'
-                    f'-OptimizationTarget: {opt_target}\n'
-                    f'-EnablePruning: Yes\n'
-                    f'-Associativity (for cache only): 16\n'
-                    f'-CacheAccessMode: Sequential\n'
-                    f'\n'
-                    f'-ProcessNode: 22\n'
-                    f'-Capacity(KB): {capacity}\n'
-                    f'-WordWidth(bit): 128\n'
-                    f'\n'
-                    f'-DeviceRoadmap: LSTP\n'
-                    f'-LocalWireType: LocalAggressive\n'
-                    f'-LocalWireRepeaterType: RepeatedNone\n'
-                    f'\n'
-                    f'-LocalWireUseLowSwing: No\n'
-                    f'-GlobalWireType: GlobalAggressive\n'
-                    f'-GlobalWireRepeaterType: RepeatedNone\n'
-                    f'-GlobalWireUseLowSwing: No\n'
-                    f'\n'
-                    f'-Routing: H-tree\n'
-                    f'-InternalSensing: true\n'
-                    f'-MemoryCellInputFile: ./config/sample_{cell}.cell\n'
-                    f'\n'
-                    f'-Temperature(K): 350\n'
-                    f'-BufferDesignOptimization: latency\n'
-                    f'-StackedDieCount: 1\n\n')
+    #
+    # elif software == "Destiny":
+    #     cfg_data = (f'-DesignTarget: RAM\n'
+    #                 f'-OptimizationTarget: {opt_target}\n'
+    #                 f'-EnablePruning: Yes\n'
+    #                 f'\n'
+    #                 f'-ProcessNode: 22\n'
+    #                 f'-Capacity(KB): {capacity}\n'
+    #                 f'-WordWidth(bit): 128\n'
+    #                 f'\n'
+    #                 f'-DeviceRoadmap: LSTP\n'
+    #                 f'-LocalWireType: LocalAggressive\n'
+    #                 f'-LocalWireRepeaterType: RepeatedNone\n'
+    #                 f'\n'
+    #                 f'-LocalWireUseLowSwing: No\n'
+    #                 f'-GlobalWireType: GlobalAggressive\n'
+    #                 f'-GlobalWireRepeaterType: RepeatedNone\n'
+    #                 f'-GlobalWireUseLowSwing: No\n'
+    #                 f'\n'
+    #                 f'-Routing: H-tree\n'
+    #                 f'-InternalSensing: true\n'
+    #                 f'-MemoryCellInputFile: ./config/sample_{cell}.cell\n'
+    #                 f'\n'
+    #                 f'-Temperature(K): 350\n'
+    #                 f'-BufferDesignOptimization: latency\n'
+    #                 f'-StackedDieCount: 1\n\n')
 
     else:
         print("need to enter NVSim or Destiny for cfg file generation")

@@ -6,7 +6,6 @@ Cell Aspect Ratio  : 1.460
 SRAM Cell Access Transistor Width: 1.310F
 SRAM Cell NMOS Width: 2.080F
 SRAM Cell PMOS Width: 1.230F
-[WARNING] Associativity setting is ignored for non-cache designs
 
 ====================
 DESIGN SPECIFICATION

@@ -14,7 +14,6 @@ Set Mode: Current
   - Set Current: 80.000uA
   - Set Pulse: 10.000ns
 Access Type: CMOS
-[WARNING] Associativity setting is ignored for non-cache designs
 
 ====================
 DESIGN SPECIFICATION
