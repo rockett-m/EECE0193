@@ -64,18 +64,30 @@ def cli_parse():
     parser.add_argument("--tree_root", action="store", dest="tree_root", help="root folder of all code")
     parser.add_argument("--if", "--input_folder", action="store", dest="input_folder", help="input cfg files")
     parser.add_argument("--tool_path", action="store", dest="tool_path", help="root dir of nvsim or destiny with executable")
-    parser.add_argument("--parse_only", action="store", dest="parse_only", help="don't run simulations, only parse logs")
+    parser.add_argument("--parse_only", action="store_true", help="don't run simulations, only parse logs")
     parser.add_argument("--debug", action="store_true", help="debug mode (prints paths etc.)")
     args = parser.parse_args()
     return args
 
 
 def setup_env(args):
+    global tree_root
+    global tool
+
+    tool = ""
     tree_root = args.tree_root
     input_folder = args.input_folder
     tool_path = args.tool_path
     parse_only = args.parse_only
     debug = args.debug
+
+    if re.search(r"NVSim", input_folder, re.I):
+        tool = "NVSim"
+    elif re.search(r"Destiny", input_folder, re.I):
+        tool = "Destiny"
+    else:
+        print("expecting NVsim or Destiny in the input folder path")
+        sys.exit()
 
     for x in [ tree_root, input_folder, tool_path ]:
         path_test(x)
@@ -85,7 +97,7 @@ def setup_env(args):
     print(f'\ninput_folder: {input_folder}')
     print(f'\ntool_path: {tool_path}\n')
 
-    return tree_root, input_folder, tool_path, parse_only, debug
+    return tree_root, input_folder, tool_path, tool, parse_only, debug
 
 
 def build_cfg_data(software, opt_target, capacity, cell):
@@ -116,32 +128,6 @@ def build_cfg_data(software, opt_target, capacity, cell):
                     f'-Temperature (K): 350\n'
                     f'-BufferDesignOptimization: latency\n'
                     f'-UseCactiAssumption: Yes\n\n')
-    #
-    # elif software == "Destiny":
-    #     cfg_data = (f'-DesignTarget: RAM\n'
-    #                 f'-OptimizationTarget: {opt_target}\n'
-    #                 f'-EnablePruning: Yes\n'
-    #                 f'\n'
-    #                 f'-ProcessNode: 22\n'
-    #                 f'-Capacity(KB): {capacity}\n'
-    #                 f'-WordWidth(bit): 128\n'
-    #                 f'\n'
-    #                 f'-DeviceRoadmap: LSTP\n'
-    #                 f'-LocalWireType: LocalAggressive\n'
-    #                 f'-LocalWireRepeaterType: RepeatedNone\n'
-    #                 f'\n'
-    #                 f'-LocalWireUseLowSwing: No\n'
-    #                 f'-GlobalWireType: GlobalAggressive\n'
-    #                 f'-GlobalWireRepeaterType: RepeatedNone\n'
-    #                 f'-GlobalWireUseLowSwing: No\n'
-    #                 f'\n'
-    #                 f'-Routing: H-tree\n'
-    #                 f'-InternalSensing: true\n'
-    #                 f'-MemoryCellInputFile: ./config/sample_{cell}.cell\n'
-    #                 f'\n'
-    #                 f'-Temperature(K): 350\n'
-    #                 f'-BufferDesignOptimization: latency\n'
-    #                 f'-StackedDieCount: 1\n\n')
 
     else:
         print("need to enter NVSim or Destiny for cfg file generation")
@@ -149,9 +135,10 @@ def build_cfg_data(software, opt_target, capacity, cell):
     return cfg_data
 
 
-def create_cfg_files(tree_root, input_folder, debug):
+def create_cfg_files(tree_root, input_folder, tool, debug):
 
     filelist = []
+    fields = []
 
     for iso in [ "iso_area", "iso_capacity" ]:
         iso_path = os.path.join(input_folder, iso)
@@ -176,14 +163,7 @@ def create_cfg_files(tree_root, input_folder, debug):
                         cmd_chmod = "chmod 750 " + cfg_file; os.system(cmd_chmod)
                         path_test(cfg_file)
 
-                    cfg_data = ""
-                    if re.search(r"NVSim", input_folder, re.I):
-                        cfg_data = build_cfg_data("NVSim", opt_target, capacity, cell)
-                    elif re.search(r"Destiny", input_folder, re.I):
-                        cfg_data = build_cfg_data("Destiny", opt_target, capacity, cell)
-                    else:
-                        print("expecting NVsim or Destiny in the input folder path")
-                        sys.exit()
+                    cfg_data = build_cfg_data(tool, opt_target, capacity, cell)
 
                     with open(cfg_file, 'w') as fc:
                         if debug: print(cfg_file)
@@ -201,35 +181,8 @@ def create_cfg_files(tree_root, input_folder, debug):
                         sys.exit()
 
                     filelist.append(cfg_file)
-
-    return filelist
-
-
-def run_simulations(filelist, tool_path, parse_only, debug):
-
-    run_count = 0
-    for cfg_file in filelist:
-        output_log = cfg_file[:-3] + "out" # strip "cfg" and replace with "txt
-        if debug: print(output_log)
-
-        sim_cmd = ""
-
-        " cd ~/NVSim && ./nvsim ~/EXPERIMENTS/Input/Destiny/iso_capacity/Area/PCRAM/512KB/512KB.cfg >" \
-        " ~/EXPERIMENTS/Input/Destiny/iso_capacity/Area/PCRAM/512KB/512KB.out"
-        if re.search(r"NVSim", input_folder, re.I):
-            sim_cmd = "cd " + tool_path + " && ./nvsim " + cfg_file + " > " + output_log
-        elif re.search(r"Destiny", input_folder, re.I):
-            sim_cmd = "cd " + tool_path + " && ./destiny " + cfg_file + " > " + output_log
-        else:
-            print("expecting NVsim or Destiny in the input folder path")
-            sys.exit()
-
-        if not parse_only:
-            print(sim_cmd); os.system(sim_cmd)
-        else:
-            parse_output_log(output_log)
-
-        run_count += 1; print("run count: ", run_count)
+                    fields.append(iso, opt_target, cell, capacity)
+    return filelist, fields
 
 
 
@@ -251,41 +204,49 @@ def parse_output_log(output_log):
                 if result:
                     value = result.group(1) # 102792.155
                     units = result.group(2) # um^2
+                    print(value, units)
             elif RL:
                 result = re.match(r"^\s*-\s*Read Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
                     value = result.group(1) # 3.407
                     units = result.group(2) # ns
+                    print(value, units)
             elif WL:
                 result = re.match(r"^\s*-\s*Write Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
                     value = result.group(1) # 21.855
                     units = result.group(2) # ns
+                    print(value, units)
             elif RB:
                 result = re.match(r"^\s*-\s*Read Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 3.948
                     units = result.group(2) # GB/s
+                    print(value, units)
             elif WB:
                 result = re.match(r"^\s*-\s*Write Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 744.882
                     units = result.group(2) # MB/s
+                    print(value, units)
             elif RE:
                 result = re.match(r"^\s*-\s*Read Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 105.772
                     units = result.group(2) # pJ
+                    print(value, units)
             elif WE:
                 result = re.match(r"^\s*-\s*Write Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 187.673
                     units = result.group(2) # pJ
+                    print(value, units)
             elif LP:
                 result = re.match(r"^\s*-\s*Leakage Power\s*=\s*([0-9.]+)([a-z]W)\s*$", line)
                 if result:
                     value = result.group(1) # 61.128
                     units = result.group(2) # uW
+                    print(value, units)
             else:
                 pass
     fo.close()
@@ -301,7 +262,50 @@ def parse_output_log(output_log):
       - Leakage Power = 61.128uW
   """
 
-    return Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power
+
+def run_simulations(filelist, fields, tool_path, tool, parse_only, debug):
+
+    output_log_list = []
+
+    run_count = 0
+    for cfg_file in filelist:
+        output_log = cfg_file[:-3] + "out" # strip "cfg" and replace with "txt
+        output_log_list.append(output_log)
+
+        if debug: print(output_log)
+
+        sim_cmd = ""
+        if tool == "NVSim":
+            sim_cmd = "cd " + tool_path + " && ./nvsim " + cfg_file + " > " + output_log
+        elif tool == "Destiny":
+            sim_cmd = "cd " + tool_path + " && ./destiny " + cfg_file + " > " + output_log
+
+        if not parse_only:
+            print(sim_cmd); os.system(sim_cmd)
+        else:
+
+
+            parse_output_log(output_log)
+
+            suffix = tool + "_report.csv"
+            csv_report = os.path.join(tree_root, suffix)
+
+            with open(csv_report, 'w') as csvfile:
+                csvwriter = csv.writer(csvfile)
+
+            csvfile.close()
+
+            csv_write_row(fields)
+
+
+        run_count += 1; print("run count: ", run_count)
+
+
+def csv_write_row():
+    pass
+    # goal now is to write fields to csv rows and then the value and units in the right-most cols
+
+
 
 
 """
@@ -398,13 +402,13 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    tree_root, input_folder, tool_path, parse_only, debug = setup_env(args)
+    tree_root, input_folder, tool_path, parse_only, tool, debug = setup_env(args)
 
     # generates all cfg files for either NVSim or Destiny
-    filelist = create_cfg_files(tree_root, input_folder, debug) # calls build_cfg_data()
+    filelist, fields = create_cfg_files(tree_root, input_folder, tool, debug) # calls build_cfg_data()
 
     # run actual simulations for either NVSim or Destiny
-    run_simulations(filelist, tool_path, parse_only, debug)
+    run_simulations(filelist, fields, tool_path, tool, parse_only, debug)
 
     # plotting like matplotlib
     # before monday run 3D tests as well to see if destiny works...
