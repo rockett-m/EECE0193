@@ -64,6 +64,7 @@ def cli_parse():
     parser.add_argument("--tree_root", action="store", dest="tree_root", help="root folder of all code")
     parser.add_argument("--if", "--input_folder", action="store", dest="input_folder", help="input cfg files")
     parser.add_argument("--tool_path", action="store", dest="tool_path", help="root dir of nvsim or destiny with executable")
+    parser.add_argument("--parse_only", action="store", dest="parse_only", help="don't run simulations, only parse logs")
     parser.add_argument("--debug", action="store_true", help="debug mode (prints paths etc.)")
     args = parser.parse_args()
     return args
@@ -73,6 +74,7 @@ def setup_env(args):
     tree_root = args.tree_root
     input_folder = args.input_folder
     tool_path = args.tool_path
+    parse_only = args.parse_only
     debug = args.debug
 
     for x in [ tree_root, input_folder, tool_path ]:
@@ -83,7 +85,7 @@ def setup_env(args):
     print(f'\ninput_folder: {input_folder}')
     print(f'\ntool_path: {tool_path}\n')
 
-    return tree_root, input_folder, tool_path, debug
+    return tree_root, input_folder, tool_path, parse_only, debug
 
 
 def build_cfg_data(software, opt_target, capacity, cell):
@@ -203,7 +205,7 @@ def create_cfg_files(tree_root, input_folder, debug):
     return filelist
 
 
-def run_simulations(filelist, tool_path, debug):
+def run_simulations(filelist, tool_path, parse_only, debug):
 
     run_count = 0
     for cfg_file in filelist:
@@ -222,15 +224,88 @@ def run_simulations(filelist, tool_path, debug):
             print("expecting NVsim or Destiny in the input folder path")
             sys.exit()
 
-        print(sim_cmd); os.system(sim_cmd)
+        if not parse_only:
+            print(sim_cmd); os.system(sim_cmd)
+        else:
+            parse_output_log(output_log)
+
         run_count += 1; print("run count: ", run_count)
 
 
 
-def parse_output_log():
+def parse_output_log(output_log):
+    Total_Area = Read_L = Write_L = Read_BW = Write_BW = RDE = WDE = Leakage_Power = ""
+
+    with open(output_log, 'r') as fo:
+        for line in fo:
+            TA = re.search(r"Total Area\s*=\s*", line) # []m^2
+            RL = re.search(r"Read Latency\s*=\s*", line)
+            WL = re.search(r"Write Latency\s*=\s*", line)
+            RB = re.search(r"Read Bandwidth\s*=\s*", line)
+            WB = re.search(r"Write Bandwidth\s*=\s*", line)
+            RE = re.search(r"Read Dynamic Energy\s*=\s*", line)
+            WE = re.search(r"Write Dynamic Energy\s*=\s*", line)
+            LP = re.search(r"Leakage Power\s*=\s*", line)
+            if TA:
+                result = re.match(r"^\s*-\s*Total Area\s*.*=\s*([0-9.]+)([a-z]m\^2)\s*$", line)
+                if result:
+                    value = result.group(1) # 102792.155
+                    units = result.group(2) # um^2
+            elif RL:
+                result = re.match(r"^\s*-\s*Read Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
+                if result:
+                    value = result.group(1) # 3.407
+                    units = result.group(2) # ns
+            elif WL:
+                result = re.match(r"^\s*-\s*Write Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
+                if result:
+                    value = result.group(1) # 21.855
+                    units = result.group(2) # ns
+            elif RB:
+                result = re.match(r"^\s*-\s*Read Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
+                if result:
+                    value = result.group(1) # 3.948
+                    units = result.group(2) # GB/s
+            elif WB:
+                result = re.match(r"^\s*-\s*Write Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
+                if result:
+                    value = result.group(1) # 744.882
+                    units = result.group(2) # MB/s
+            elif RE:
+                result = re.match(r"^\s*-\s*Read Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
+                if result:
+                    value = result.group(1) # 105.772
+                    units = result.group(2) # pJ
+            elif WE:
+                result = re.match(r"^\s*-\s*Write Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
+                if result:
+                    value = result.group(1) # 187.673
+                    units = result.group(2) # pJ
+            elif LP:
+                result = re.match(r"^\s*-\s*Leakage Power\s*=\s*([0-9.]+)([a-z]W)\s*$", line)
+                if result:
+                    value = result.group(1) # 61.128
+                    units = result.group(2) # uW
+            else:
+                pass
+    fo.close()
 
     """
-    User-defined configuration file (/Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim/iso_area/LeakagePower/RRAM/2048KB/2048KB.cfg) is loaded
+     - Total Area = 114.881um x 894.774um = 102792.155um^2
+     -  Read Latency = 3.407ns
+      - Write Latency = 21.855ns
+       - Read Bandwidth  = 3.948GB/s
+     - Write Bandwidth = 744.882MB/s
+     -  Read Dynamic Energy = 105.772pJ
+     - Write Dynamic Energy = 187.673pJ
+      - Leakage Power = 61.128uW
+  """
+
+    return Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power
+
+
+"""
+User-defined configuration file (/Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim/iso_area/LeakagePower/RRAM/2048KB/2048KB.cfg) is loaded
 
 Memory Cell: RRAM (Memristor)
 Cell Area (F^2)    : 4.000 (2.000Fx2.000F)
@@ -256,29 +331,6 @@ Data Width : 128Bits (16Bytes)
 
 Searching for the best solution that is optimized for leakage power ...
 
-=============
-CONFIGURATION
-=============
-Bank Organization: 2 x 8
- - Row Activation   : 1 / 2
- - Column Activation: 8 / 8
-Mat Organization: 2 x 2
- - Row Activation   : 2 / 2
- - Column Activation: 2 / 2
- - Subarray Size    : 512 Rows x 512 Columns
-Mux Level:
- - Senseamp Mux      : 128
- - Output Level-1 Mux: 1
- - Output Level-2 Mux: 1
-Local Wire:
- - Wire Type : Local Aggressive
- - Repeater Type: No Repeaters
- - Low Swing : No
-Global Wire:
- - Wire Type : Global Aggressive
- - Repeater Type: No Repeaters
- - Low Swing : No
-Buffer Design Style: Latency-Optimized
 =============
    RESULT
 =============
@@ -333,8 +385,8 @@ Power:
 
 Finished!
 
-    :return:
-    """
+:return:
+"""
 
 
 
@@ -346,15 +398,14 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    tree_root, input_folder, tool_path, debug = setup_env(args)
+    tree_root, input_folder, tool_path, parse_only, debug = setup_env(args)
 
     # generates all cfg files for either NVSim or Destiny
     filelist = create_cfg_files(tree_root, input_folder, debug) # calls build_cfg_data()
 
     # run actual simulations for either NVSim or Destiny
-    run_simulations(filelist, tool_path, debug)
+    run_simulations(filelist, tool_path, parse_only, debug)
 
-    # unique folder and cfg file and output file in specific test case dir
     # plotting like matplotlib
     # before monday run 3D tests as well to see if destiny works...
 
