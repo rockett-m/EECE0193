@@ -201,77 +201,126 @@ def parse_output_log(output_log):
     with open(output_log, 'r') as fo:
         for line in fo:
             TA = re.search(r"Total Area\s*=\s*", line) # []m^2
-            RL = re.search(r"Read Latency\s*=\s*", line)
-            WL = re.search(r"Write Latency\s*=\s*", line)
+            RL = re.search(r"Read (Total )?Latency\s*=\s*", line)
+            WL = re.search(r"Write (Total )?Latency\s*=\s*", line)
             RB = re.search(r"Read Bandwidth\s*=\s*", line)
             WB = re.search(r"Write Bandwidth\s*=\s*", line)
             RE = re.search(r"Read Dynamic Energy\s*=\s*", line)
             WE = re.search(r"Write Dynamic Energy\s*=\s*", line)
             LP = re.search(r"Leakage Power\s*=\s*", line)
+
             if TA:
                 result = re.match(r"^\s*-\s*Total Area\s*.*=\s*([0-9.]+)([a-z]m\^2)\s*$", line)
                 if result:
                     value = result.group(1) # 102792.155
                     units = result.group(2) # um^2
-                    if units[0] == "m": # mm^2
-                        value = round(float(value) * 1000000, 3) # 3 places past decimal point for consistency
-                    Total_Area = value
+
+                    if units[0] != "m" or units[0] != "u":
+                        if units[0] == "m":  # mm^2
+                            value = round(float(value) * 1000000, 3)  # 3 places past decimal point for consistency
+                        Total_Area = value
+                    else:
+                        Total_Area = str(value) + units
+
             elif RL:
-                result = re.match(r"^\s*-\s*Read Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
+                result = re.match(r"^\s*-\s*Read (Total )?Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
-                    value = result.group(1) # 3.407
-                    units = result.group(2) # ns
-                    if units[0] == "p": # ps
-                        value = round(float(value) / 1000, 3)
-                    Read_L = value
+                    if not result.group(3): # Total detected
+                        value = result.group(1)  # 3.407
+                        units = result.group(2)  # ns
+                    else:
+                        value = result.group(2)  # 3.407
+                        units = result.group(3)  # ns
+
+                    if units[0] != "p" or units[0] != "n":
+                        if units[0] == "p":  # ps
+                            value = round(float(value) / 1000, 3)
+                        Read_L = value
+                    else:
+                        Read_L = str(value) + units
+
             elif WL:
-                result = re.match(r"^\s*-\s*Write Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
+                result = re.match(r"^\s*-\s*Write (Total )?Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
-                    value = result.group(1) # 21.855
-                    units = result.group(2) # ns
-                    if units[0] == "p": # ps
-                        value = round(float(value) / 1000, 3)
-                    Write_L = value
+                    if not result.group(3):
+                        value = result.group(1) # 21.855
+                        units = result.group(2) # ns
+                    else:
+                        value = result.group(2) # 21.855
+                        units = result.group(3) # ns
+
+                    if units[0] != "p" or units[0] != "n":
+                        if units[0] == "p":  # ps
+                            value = round(float(value) / 1000, 3)
+                        Write_L = value
+                    else:
+                        Write_L = str(value) + units
+
             elif RB:
                 result = re.match(r"^\s*-\s*Read Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 3.948
                     units = result.group(2) # GB/s
-                    if units[0] == "M": # MB/s
-                        value = round(float(value) / 1000, 3)
-                    Read_BW = value
+
+                    if units[0] != "M" or units[0] != "G":
+                        if units[0] == "M":  # MB/s
+                            value = round(float(value) / 1000, 3)
+                        Read_BW = value
+                    else:
+                        Read_BW = str(value) + units
+
             elif WB:
                 result = re.match(r"^\s*-\s*Write Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 744.882
                     units = result.group(2) # MB/s
-                    if units[0] == "M": # MB/s
-                        value = round(float(value) / 1000, 3)
-                    Write_BW = value
+
+                    if units[0] != "M" or units[0] != "G":
+                        if units[0] == "M":  # MB/s
+                            value = round(float(value) / 1000, 3)
+                        Write_BW = value
+                    else:
+                        Write_BW = str(value) + units
+
             elif RE:
                 result = re.match(r"^\s*-\s*Read Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 105.772
                     units = result.group(2) # pJ
-                    if units[0] == "n": # nJ
-                        value = round(float(value) * 1000, 3)
-                    RDE = value
+
+                    if units[0] != "p" or units[0] != "n":
+                        if units[0] == "n":  # nJ
+                            value = round(float(value) * 1000, 3)
+                        RDE = value
+                    else:
+                        RDE = str(value) + units
+
             elif WE:
                 result = re.match(r"^\s*-\s*Write Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 187.673
                     units = result.group(2) # pJ
-                    if units[0] == "n": # nJ
-                        value = round(float(value) * 1000, 3)
-                    WDE = value
+
+                    if units[0] != "n" or units[0] != "p":
+                        if units[0] == "n":  # nJ
+                            value = round(float(value) * 1000, 3)
+                        WDE = value
+                    else:
+                        WDE = str(value) + units
+
             elif LP:
                 result = re.match(r"^\s*-\s*Leakage Power\s*=\s*([0-9.]+)([a-z]W)\s*$", line)
                 if result:
                     value = result.group(1) # 61.128
                     units = result.group(2) # uW
-                    if units[0] == "m": # mW
-                        value = round(float(value) * 1000, 3)
-                    Leakage_Power = value
+
+                    if units[0] != "m" or units[0] != "u":
+                        if units[0] == "m":  # mW
+                            value = round(float(value) * 1000, 3)
+                        Leakage_Power = value
+                    else:
+                        Leakage_Power = str(value) + units
+
             else:
                 pass
     fo.close()
