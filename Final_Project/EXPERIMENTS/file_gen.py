@@ -132,7 +132,6 @@ def build_cfg_data(opt_target, capacity, cell):
 def create_cfg_files(tree_root, input_folder, parse_only, debug):
 
     filelist = []
-    fields = []
 
     for iso in [ "iso_area", "iso_capacity" ]:
         iso_path = os.path.join(input_folder, iso)
@@ -176,10 +175,8 @@ def create_cfg_files(tree_root, input_folder, parse_only, debug):
                         sys.exit()
 
                     filelist.append(cfg_file)
-                    data = [iso, opt_target, cell, capacity]
-                    fields.append(data)
 
-    return filelist, fields
+    return filelist
 
 
 def parse_output_log(output_log):
@@ -308,8 +305,6 @@ def parse_output_log(output_log):
                     else:
                         Leakage_Power = str(value) + units
 
-            else:
-                pass
     fo.close()
 
     """
@@ -322,8 +317,11 @@ def parse_output_log(output_log):
      - Write Dynamic Energy = 187.673pJ
       - Leakage Power = 61.128uW
   """
-    config = tool + ":"
-    fields = [ output_log, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+    sim_settings = ':'.join(output_log.split('/')[-6:-1])
+    tool, isolation, opt_target, cell, size = output_log.split('/')[-6:-1]
+    # fields = [ sim_settings, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+    fields = [ tool, isolation, opt_target, cell, size.split('KB')[0],
+               Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
 
     return fields
 
@@ -337,9 +335,10 @@ def run_simulations(filelist, tool_path, parse_only, debug):
             os.remove(csv_report)
 
         with open(csv_report, 'a+', encoding='ascii', newline='\n') as csvfile:
-            header = [ 'Configuration', 'Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', \
-                       'Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)', 'Read Dynamic Energy (pJ)', \
-                       'Write Dynamic Energy (pJ)', 'Leakage Power (uW)' ]
+            header = [ 'Tool', 'Isolation', 'Optimization Target', 'Cell Type', 'Capacity (KB)',
+                       'Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)',
+                       'Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)',
+                       'Read Dynamic Energy (pJ)', 'Write Dynamic Energy (pJ)', 'Leakage Power (uW)' ]
             writer = csv.DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
         csvfile.close()
@@ -387,7 +386,7 @@ if __name__ == "__main__":
     tree_root, input_folder, tool_path, parse_only, debug = setup_env(args)
 
     # generates all cfg files for either NVSim or Destiny
-    filelist, fields = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+    filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
 
     # run actual simulations for either NVSim or Destiny
     run_simulations(filelist, tool_path, parse_only, debug)
