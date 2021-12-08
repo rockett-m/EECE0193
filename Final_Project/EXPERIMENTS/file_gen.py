@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
-# sample of how to run
-# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
-# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim/
+# sample of how to run in dir: /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/
 
-# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
-# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny/
+# NVSim - parse sim reports
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/NVSim --parse_only
+
+# Destiny - run simulations
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2
 
 import os
 import sys
@@ -360,46 +365,6 @@ if __name__ == "__main__":
     pretty_time(t0, t1)
 
     sys.exit()
-
-"""
-[mrocke01@login-prod-01 EXPERIMENTS]$
-python3 file_gen.py --tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
---if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
---tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
-"""
-
-"""
-Slurm HPC Sbatch Script
-
-#!/bin/sh
-#SBATCH -J nvsim   #job name
-#SBATCH --time=06-23:50:00  #requested time (DD-HH:MM:SS)
-#SBATCH -p preempt    #running on "gpu|preempt" partition/queue
-#SBATCH -N 1   #1 nodes
-#SBATCH -n 1   #1 tasks total
-#SBATCH -c 8   #8 cpu cores per task
-#SBATCH --mem=16g  #requesting 2GB of RAM total
-#SBATCH --gres=gpu:v100:1  #requesting 1 Nvidia V100 GPU
-#SBATCH --output=MyJob.%j.%N.out  #saving standard output to file, %j=JOBID,%N=NodeName
-#SBATCH --error=MyJob.%j.%N.err   #saving standard error to file, %j=JOBID,%N=NodeName
-#SBATCH --mail-type=ALL    #email options
-#SBATCH --mail-user=morgan.rockett@tufts.edu
-
-#[commands_you_would_like_to_exe_on_the_compute_nodes]
-# for example, running a python script
-# 1st, load the module
-module load python/3.6.0
-# run python
-#python myscript.py #make sure myscript.py exists in the current directory
-
-module load cuda/11.0
-module load cudnn/7.1
-
-/usr/bin/python3 /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/file_gen.py \
---tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
---if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
---tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
-"""
 
 
 
