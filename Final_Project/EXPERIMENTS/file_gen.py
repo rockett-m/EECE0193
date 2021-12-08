@@ -16,6 +16,8 @@ import subprocess
 import re
 import csv
 
+global tool
+
 global HOME
 HOME = os.getcwd()
 
@@ -97,13 +99,13 @@ def setup_env(args):
     print(f'\ninput_folder: {input_folder}')
     print(f'\ntool_path: {tool_path}\n')
 
-    return tree_root, input_folder, tool_path, tool, parse_only, debug
+    return tree_root, input_folder, tool_path, parse_only, debug
 
 
-def build_cfg_data(software, opt_target, capacity, cell):
+def build_cfg_data(opt_target, capacity, cell):
 
     cfg_data = ""
-    if software == "NVSim" or software == "Destiny":
+    if (tool == "NVSim") or (tool == "Destiny"):
         cfg_data = (f'-DesignTarget: RAM\n'
                     f'-OptimizationTarget: {opt_target}\n'
                     f'-EnablePruning: Yes\n'
@@ -135,7 +137,7 @@ def build_cfg_data(software, opt_target, capacity, cell):
     return cfg_data
 
 
-def create_cfg_files(tree_root, input_folder, tool, debug):
+def create_cfg_files(tree_root, input_folder, parse_only, debug):
 
     filelist = []
     fields = []
@@ -163,12 +165,13 @@ def create_cfg_files(tree_root, input_folder, tool, debug):
                         cmd_chmod = "chmod 750 " + cfg_file; os.system(cmd_chmod)
                         path_test(cfg_file)
 
-                    cfg_data = build_cfg_data(tool, opt_target, capacity, cell)
+                    cfg_data = build_cfg_data(opt_target, capacity, cell)
 
-                    with open(cfg_file, 'w') as fc:
-                        if debug: print(cfg_file)
-                        fc.write(cfg_data)
-                    fc.close()
+                    if not parse_only:
+                        with open(cfg_file, 'w') as fc:
+                            if debug: print(cfg_file)
+                            fc.write(cfg_data)
+                        fc.close()
 
                     if debug:
                         print(f'\ntree_root: {tree_root}\n'
@@ -181,9 +184,10 @@ def create_cfg_files(tree_root, input_folder, tool, debug):
                         sys.exit()
 
                     filelist.append(cfg_file)
-                    fields.append(iso, opt_target, cell, capacity)
-    return filelist, fields
+                    data = [iso, opt_target, cell, capacity]
+                    fields.append(data)
 
+    return filelist, fields
 
 
 def parse_output_log(output_log):
@@ -204,49 +208,65 @@ def parse_output_log(output_log):
                 if result:
                     value = result.group(1) # 102792.155
                     units = result.group(2) # um^2
-                    print(value, units)
+                    if units[0] == "m": # mm^2
+                        value = round(float(value) * 1000000, 3) # 3 places past decimal point for consistency
+                    Total_Area = value
             elif RL:
                 result = re.match(r"^\s*-\s*Read Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
                     value = result.group(1) # 3.407
                     units = result.group(2) # ns
-                    print(value, units)
+                    if units[0] == "p": # ps
+                        value = round(float(value) / 1000, 3)
+                    Read_L = value
             elif WL:
                 result = re.match(r"^\s*-\s*Write Latency\s*=\s*([0-9.]+)([a-z]s)\s*$", line)
                 if result:
                     value = result.group(1) # 21.855
                     units = result.group(2) # ns
-                    print(value, units)
+                    if units[0] == "p": # ps
+                        value = round(float(value) / 1000, 3)
+                    Write_L = value
             elif RB:
                 result = re.match(r"^\s*-\s*Read Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 3.948
                     units = result.group(2) # GB/s
-                    print(value, units)
+                    if units[0] == "M": # MB/s
+                        value = round(float(value) / 1000, 3)
+                    Read_BW = value
             elif WB:
                 result = re.match(r"^\s*-\s*Write Bandwidth\s*=\s*([0-9.]+)([A-Z]B/s)\s*$", line)
                 if result:
                     value = result.group(1) # 744.882
                     units = result.group(2) # MB/s
-                    print(value, units)
+                    if units[0] == "M": # MB/s
+                        value = round(float(value) / 1000, 3)
+                    Write_BW = value
             elif RE:
                 result = re.match(r"^\s*-\s*Read Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 105.772
                     units = result.group(2) # pJ
-                    print(value, units)
+                    if units[0] == "n": # nJ
+                        value = round(float(value) * 1000, 3)
+                    RDE = value
             elif WE:
                 result = re.match(r"^\s*-\s*Write Dynamic Energy\s*=\s*([0-9.]+)([a-z]J)\s*$", line)
                 if result:
                     value = result.group(1) # 187.673
                     units = result.group(2) # pJ
-                    print(value, units)
+                    if units[0] == "n": # nJ
+                        value = round(float(value) * 1000, 3)
+                    WDE = value
             elif LP:
                 result = re.match(r"^\s*-\s*Leakage Power\s*=\s*([0-9.]+)([a-z]W)\s*$", line)
                 if result:
                     value = result.group(1) # 61.128
                     units = result.group(2) # uW
-                    print(value, units)
+                    if units[0] == "m": # mW
+                        value = round(float(value) * 1000, 3)
+                    Leakage_Power = value
             else:
                 pass
     fo.close()
@@ -261,16 +281,34 @@ def parse_output_log(output_log):
      - Write Dynamic Energy = 187.673pJ
       - Leakage Power = 61.128uW
   """
+    config = tool + ":"
+    fields = [ output_log, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+
+    return fields
 
 
-def run_simulations(filelist, fields, tool_path, tool, parse_only, debug):
+def run_simulations(filelist, tool_path, parse_only, debug):
+
+    if parse_only: # add csv headers
+        suffix = tool + "_report.csv"
+        csv_report = os.path.join(tree_root, suffix)
+        if os.path.exists(csv_report):
+            os.remove(csv_report)
+
+        with open(csv_report, 'a+', encoding='ascii', newline='\n') as csvfile:
+            header = [ 'Configuration', 'Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)', 'Read Dynamic Energy (pJ)', 'Write Dynamic Energy (pJ)', 'Leakage Power (uW)' ]
+            writer = csv.DictWriter(csvfile, fieldnames=header)
+            writer.writeheader()
+        csvfile.close()
 
     output_log_list = []
 
     run_count = 0
     for cfg_file in filelist:
         output_log = cfg_file[:-3] + "out" # strip "cfg" and replace with "txt
-        output_log_list.append(output_log)
+
+        # output_log_list.append(output_log_nl)
+        output_log_list.append(str(output_log))
 
         if debug: print(output_log)
 
@@ -280,31 +318,97 @@ def run_simulations(filelist, fields, tool_path, tool, parse_only, debug):
         elif tool == "Destiny":
             sim_cmd = "cd " + tool_path + " && ./destiny " + cfg_file + " > " + output_log
 
-        if not parse_only:
+        if not parse_only: # generate
             print(sim_cmd); os.system(sim_cmd)
-        else:
 
+        else: # parse only
+            fields = parse_output_log(output_log)
 
-            parse_output_log(output_log)
-
-            suffix = tool + "_report.csv"
-            csv_report = os.path.join(tree_root, suffix)
-
-            with open(csv_report, 'w') as csvfile:
+            # with open(csv_report, 'a+') as csvfile:
+            with open(csv_report, 'a+', encoding='ascii', newline='\n') as csvfile:
+            # with open(csv_report, 'a+', encoding='UTF8') as csvfile:
                 csvwriter = csv.writer(csvfile)
-
+                csvwriter.writerow(fields)
+                print(output_log)
             csvfile.close()
-
-            csv_write_row(fields)
-
 
         run_count += 1; print("run count: ", run_count)
 
+    if parse_only:
+        print("csv_file: ", csv_report)
 
-def csv_write_row():
-    pass
-    # goal now is to write fields to csv rows and then the value and units in the right-most cols
 
+if __name__ == "__main__":
+
+    t0 = time.perf_counter()
+
+    args = cli_parse()
+
+    tree_root, input_folder, tool_path, parse_only, debug = setup_env(args)
+
+    # generates all cfg files for either NVSim or Destiny
+    filelist, fields = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+
+    # run actual simulations for either NVSim or Destiny
+    run_simulations(filelist, tool_path, parse_only, debug)
+
+    # plotting like matplotlib
+    # before monday run 3D tests as well to see if destiny works...
+
+    t1 = time.perf_counter()
+
+    pretty_time(t0, t1)
+
+    sys.exit()
+
+"""
+[mrocke01@login-prod-01 EXPERIMENTS]$
+python3 file_gen.py --tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
+--if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
+--tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
+"""
+
+"""
+Slurm HPC Sbatch Script
+
+#!/bin/sh
+#SBATCH -J nvsim   #job name
+#SBATCH --time=06-23:50:00  #requested time (DD-HH:MM:SS)
+#SBATCH -p preempt    #running on "gpu|preempt" partition/queue
+#SBATCH -N 1   #1 nodes
+#SBATCH -n 1   #1 tasks total
+#SBATCH -c 8   #8 cpu cores per task
+#SBATCH --mem=16g  #requesting 2GB of RAM total
+#SBATCH --gres=gpu:v100:1  #requesting 1 Nvidia V100 GPU
+#SBATCH --output=MyJob.%j.%N.out  #saving standard output to file, %j=JOBID,%N=NodeName
+#SBATCH --error=MyJob.%j.%N.err   #saving standard error to file, %j=JOBID,%N=NodeName
+#SBATCH --mail-type=ALL    #email options
+#SBATCH --mail-user=morgan.rockett@tufts.edu
+
+#[commands_you_would_like_to_exe_on_the_compute_nodes]
+# for example, running a python script
+# 1st, load the module
+module load python/3.6.0
+# run python
+#python myscript.py #make sure myscript.py exists in the current directory
+
+module load cuda/11.0
+module load cudnn/7.1
+
+/usr/bin/python3 /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/file_gen.py \
+--tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
+--if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
+--tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
+"""
+
+
+
+
+""" parameters that change for each dir / test
+-OptimizationTarget: [ ReadLatency, WriteLatency, ReadDynamicEnergy, WriteDynamicEnergy, ReadEDP, WriteEDP, LeakagePower, Area]
+-Capacity (KB): [ 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 ]
+-MemoryCellInputFile: ./cell_defs/SRAM.cell
+"""
 
 
 
@@ -391,120 +495,3 @@ Finished!
 
 :return:
 """
-
-
-
-
-
-if __name__ == "__main__":
-
-    t0 = time.perf_counter()
-
-    args = cli_parse()
-
-    tree_root, input_folder, tool_path, parse_only, tool, debug = setup_env(args)
-
-    # generates all cfg files for either NVSim or Destiny
-    filelist, fields = create_cfg_files(tree_root, input_folder, tool, debug) # calls build_cfg_data()
-
-    # run actual simulations for either NVSim or Destiny
-    run_simulations(filelist, fields, tool_path, tool, parse_only, debug)
-
-    # plotting like matplotlib
-    # before monday run 3D tests as well to see if destiny works...
-
-    t1 = time.perf_counter()
-
-    pretty_time(t0, t1)
-
-    sys.exit()
-
-"""
-[mrocke01@login-prod-01 EXPERIMENTS]$
-python3 file_gen.py --tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
---if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
---tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
-"""
-
-"""
-Slurm HPC Sbatch Script
-
-#!/bin/sh
-#SBATCH -J nvsim   #job name
-#SBATCH --time=06-23:50:00  #requested time (DD-HH:MM:SS)
-#SBATCH -p preempt    #running on "gpu|preempt" partition/queue
-#SBATCH -N 1   #1 nodes
-#SBATCH -n 1   #1 tasks total
-#SBATCH -c 8   #8 cpu cores per task
-#SBATCH --mem=16g  #requesting 2GB of RAM total
-#SBATCH --gres=gpu:v100:1  #requesting 1 Nvidia V100 GPU
-#SBATCH --output=MyJob.%j.%N.out  #saving standard output to file, %j=JOBID,%N=NodeName
-#SBATCH --error=MyJob.%j.%N.err   #saving standard error to file, %j=JOBID,%N=NodeName
-#SBATCH --mail-type=ALL    #email options
-#SBATCH --mail-user=morgan.rockett@tufts.edu
-
-#[commands_you_would_like_to_exe_on_the_compute_nodes]
-# for example, running a python script
-# 1st, load the module
-module load python/3.6.0
-# run python
-#python myscript.py #make sure myscript.py exists in the current directory
-
-module load cuda/11.0
-module load cudnn/7.1
-
-/usr/bin/python3 /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/file_gen.py \
---tree_root /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS \
---if /cluster/home/mrocke01/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim \
---tool_path /cluster/home/mrocke01/EECE0193/Final_Project/NVSim
-"""
-
-
-
-
-""" parameters that change for each dir / test
--OptimizationTarget: [ ReadLatency, WriteLatency, ReadDynamicEnergy, WriteDynamicEnergy, ReadEDP, WriteEDP, LeakagePower, Area]
--Capacity (KB): [ 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 ]
--MemoryCellInputFile: ./cell_defs/SRAM.cell
-"""
-
-# Sample configuration for SRAM cache
-cfg_info_archive = """
--DesignTarget: RAM
--OptimizationTarget: {}
--EnablePruning: Yes
-
--ProcessNode: 22
--Capacity (KB): {}
--WordWidth (bit): 128
-
--DeviceRoadmap: LSTP
--LocalWireType: LocalAggressive
--LocalWireRepeaterType: RepeatedNone
-
--LocalWireUseLowSwing: No
--GlobalWireType: GlobalAggressive
--GlobalWireRepeaterType: RepeatedNone
--GlobalWireUseLowSwing: No
-
--Routing: H-tree
--InternalSensing: true
--MemoryCellInputFile: ./cell_defs/SRAM.cell
-
--Temperature (K): 350
--BufferDesignOptimization: latency
--UseCactiAssumption: Yes"""
-
-# cmd = "find . -name '*'"
-# filelist = shell_exec(cmd)
-# dir_list = []
-# # print(filelist)
-#
-# for line in filelist:
-#     if type(line) == str and re.search(r"./.+", line):
-#         print(line[3:])
-#         newline = os.path.join(root, line[1:])
-#         path_test(newline)
-#         print(newline)
-#         dir_list.append(str(newline))
-# print(struct)
