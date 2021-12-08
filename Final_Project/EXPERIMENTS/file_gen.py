@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
 
-# sample of how to run in dir: /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/
-
-# NVSim - parse sim reports
-# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
-# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim
-# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/NVSim --parse_only
-
-# Destiny - run simulations
-# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
-# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
-# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2
-
 import os
 import sys
 import time
@@ -22,7 +10,6 @@ import re
 import csv
 
 global tool
-
 global HOME
 HOME = os.getcwd()
 
@@ -416,6 +403,31 @@ if __name__ == "__main__":
     sys.exit()
 
 
+# sample of how to run in dir:
+# /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/
+
+# NVSim - run simulations + generate reports
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/NVSim
+
+# NVSim - parse sim reports
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/NVSim
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/NVSim --parse_only
+
+# Destiny - run simulations + generate reports
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2
+
+# Destiny - parse sim reports
+# python3 ../EXPERIMENTS/file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2 --parse_only
+
+
+###################################################################################################################
 
 
 """ parameters that change for each dir / test
@@ -423,7 +435,6 @@ if __name__ == "__main__":
 -Capacity (KB): [ 16, 32, 64, 128, 256, 512, 1024, 2048, 4096 ]
 -MemoryCellInputFile: ./cell_defs/SRAM.cell
 """
-
 
 
 """
