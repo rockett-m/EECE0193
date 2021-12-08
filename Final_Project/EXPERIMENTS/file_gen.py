@@ -337,7 +337,9 @@ def run_simulations(filelist, tool_path, parse_only, debug):
             os.remove(csv_report)
 
         with open(csv_report, 'a+', encoding='ascii', newline='\n') as csvfile:
-            header = [ 'Configuration', 'Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)', 'Read Dynamic Energy (pJ)', 'Write Dynamic Energy (pJ)', 'Leakage Power (uW)' ]
+            header = [ 'Configuration', 'Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', \
+                       'Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)', 'Read Dynamic Energy (pJ)', \
+                       'Write Dynamic Energy (pJ)', 'Leakage Power (uW)' ]
             writer = csv.DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
         csvfile.close()
@@ -348,7 +350,6 @@ def run_simulations(filelist, tool_path, parse_only, debug):
     for cfg_file in filelist:
         output_log = cfg_file[:-3] + "out" # strip "cfg" and replace with "txt
 
-        # output_log_list.append(output_log_nl)
         output_log_list.append(str(output_log))
 
         if debug: print(output_log)
@@ -365,9 +366,7 @@ def run_simulations(filelist, tool_path, parse_only, debug):
         else: # parse only
             fields = parse_output_log(output_log)
 
-            # with open(csv_report, 'a+') as csvfile:
             with open(csv_report, 'a+', encoding='ascii', newline='\n') as csvfile:
-            # with open(csv_report, 'a+', encoding='UTF8') as csvfile:
                 csvwriter = csv.writer(csvfile)
                 csvwriter.writerow(fields)
                 print(output_log)
@@ -376,7 +375,7 @@ def run_simulations(filelist, tool_path, parse_only, debug):
         run_count += 1; print("run count: ", run_count)
 
     if parse_only:
-        print("csv_file: ", csv_report)
+        print("csv_report: ", csv_report)
 
 
 if __name__ == "__main__":
