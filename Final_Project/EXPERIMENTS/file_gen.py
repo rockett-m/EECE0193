@@ -318,8 +318,9 @@ def parse_output_log(output_log):
       - Leakage Power = 61.128uW
   """
     sim_settings = ':'.join(output_log.split('/')[-6:-1])
-    tool, isolation, opt_target, cell, size = output_log.split('/')[-6:-1]
     # fields = [ sim_settings, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+
+    tool, isolation, opt_target, cell, size = output_log.split('/')[-6:-1]
     fields = [ tool, isolation, opt_target, cell, size.split('KB')[0],
                Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
 
