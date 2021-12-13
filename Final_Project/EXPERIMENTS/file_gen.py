@@ -179,6 +179,56 @@ def create_cfg_files(tree_root, input_folder, parse_only, debug):
     return filelist
 
 
+def create_cfg_files_3d(tree_root, input_folder, parse_only, debug):
+
+    filelist = []
+
+    for iso in ["iso_area", "iso_capacity"]:
+        iso_path = os.path.join(input_folder, iso)
+
+        for opt_target in ["ReadLatency", "WriteLatency", "ReadDynamicEnergy", "WriteDynamicEnergy", "ReadEDP", "WriteEDP", "LeakagePower", "Area"]:
+            opt_path = os.path.join(iso_path, opt_target)
+
+            for cell in [ "3D_RRAM" ]:
+                cell_path = os.path.join(opt_path, cell)
+
+                for capacity in ["16", "32", "64", "128", "256", "512", "1024", "2048", "4096"]:
+                    cfg_name = capacity + "KB"
+                    cap_path = os.path.join(cell_path, cfg_name)
+
+                    if not os.path.exists(cap_path): os.makedirs(cap_path, exist_ok=True)
+                    path_test(cap_path)
+
+                    cfg_filename = capacity + "KB.cfg"
+                    cfg_file = os.path.join(cap_path, cfg_filename)
+                    if not os.path.exists(cfg_file):
+                        cmd_create = "touch " + cfg_file; os.system(cmd_create)
+                    cmd_chmod = "chmod 750 " + cfg_file; os.system(cmd_chmod)
+                    path_test(cfg_file)
+
+                    cfg_data = build_cfg_data(opt_target, capacity, "RRAM")
+
+                    if not parse_only:
+                        with open(cfg_file, 'w') as fc:
+                            if debug: print(cfg_file)
+                            fc.write(cfg_data)
+                            fc.close()
+
+                            if debug:
+                                print(f'\ntree_root: {tree_root}\n'
+                                f'\ninput_folder: {input_folder}\n'
+                                f'\niso_path: {iso_path}\n'
+                                f'\nopt_path: {opt_path}\n'
+                                f'\ncap_path: {cap_path}\n'
+                                f'\ncell_path: {cell_path}\n'
+                                f'\ncfg_file: {cfg_file}\n')
+                                sys.exit()
+
+                            filelist.append(cfg_file)
+
+    return filelist
+
+
 def parse_output_log(output_log):
     Total_Area = Read_L = Write_L = Read_BW = Write_BW = RDE = WDE = Leakage_Power = ""
 
@@ -389,11 +439,17 @@ if __name__ == "__main__":
     # generates all cfg files for either NVSim or Destiny
     filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
 
+    print("tool: ", tool)
+
+    if tool == "Destiny":
+        filelist_3d = create_cfg_files_3d(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+        for i in filelist_3d:
+            filelist.append(i) # append 3d files to normal end of normal filelist if sim is destiny
+
     # run actual simulations for either NVSim or Destiny
     run_simulations(filelist, tool_path, parse_only, debug)
 
     # plotting like matplotlib
-    # before monday run 3D tests as well to see if destiny works...
 
     t1 = time.perf_counter()
 
