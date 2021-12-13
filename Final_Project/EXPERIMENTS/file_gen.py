@@ -357,6 +357,15 @@ def parse_output_log(output_log):
 
     fo.close()
 
+    sim_settings = ':'.join(output_log.split('/')[-6:-1])
+    # fields = [ sim_settings, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+
+    tool, isolation, opt_target, cell, size = output_log.split('/')[-6:-1]
+    fields = [ tool, isolation, opt_target, cell, size.split('KB')[0],
+               Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
+
+    return fields
+
     """
      - Total Area = 114.881um x 894.774um = 102792.155um^2
      -  Read Latency = 3.407ns
@@ -367,14 +376,6 @@ def parse_output_log(output_log):
      - Write Dynamic Energy = 187.673pJ
       - Leakage Power = 61.128uW
   """
-    sim_settings = ':'.join(output_log.split('/')[-6:-1])
-    # fields = [ sim_settings, Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
-
-    tool, isolation, opt_target, cell, size = output_log.split('/')[-6:-1]
-    fields = [ tool, isolation, opt_target, cell, size.split('KB')[0],
-               Total_Area, Read_L, Write_L, Read_BW, Write_BW, RDE, WDE, Leakage_Power ]
-
-    return fields
 
 
 def run_simulations(filelist, tool_path, parse_only, debug):
