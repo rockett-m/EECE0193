@@ -1,0 +1,115 @@
+User-defined configuration file (/Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny/WriteLatency/3D_RRAM/256KB/256KB.cfg) is loaded
+
+====================
+DESIGN SPECIFICATION
+====================
+Design Target: Random Access Memory
+Capacity   : 256KB
+Data Width : 128Bits (16Bytes)
+
+Searching for the best solution that is optimized for write latency ...
+Using cell file: ./cell_defs/RRAM.cell
+numSolutions = 8703 / numDesigns = 218700
+
+=============
+   SUMMARY   
+=============
+Optimized for: Write Latency
+Memory Cell: RRAM (Memristor)
+Cell Area (F^2)    : 4 (2Fx2F)
+Cell Aspect Ratio  : 1
+Cell Turned-On Resistance : 1Mohm
+Cell Turned-Off Resistance: 10Mohm
+Read Mode: Current-Sensing
+  - Read Voltage: 0.4V
+Reset Mode: Voltage
+  - Reset Voltage: 2V
+  - Reset Pulse: 10ns
+Set Mode: Voltage
+  - Set Voltage: 2V
+  - Set Pulse: 10ns
+Access Type: None Access Device
+
+=============
+CONFIGURATION
+=============
+Bank Organization: 16 x 32 x 16
+ - Row Activation   : 1 / 16 x 1
+ - Column Activation: 32 / 32 x 1
+Mat Organization: 2 x 2
+ - Row Activation   : 2 / 2
+ - Column Activation: 2 / 2
+ - Subarray Size    : 2 Rows x 32 Columns
+Mux Level:
+ - Senseamp Mux      : 32
+ - Output Level-1 Mux: 1
+ - Output Level-2 Mux: 1
+Local Wire:
+ - Wire Type : Local Aggressive
+ - Repeater Type: No Repeaters
+ - Low Swing : No
+Global Wire:
+ - Wire Type : Global Aggressive
+ - Repeater Type: No Repeaters
+ - Low Swing : No
+Buffer Design Style: Latency-Optimized
+=============
+   RESULT
+=============
+Area:
+ - Total Area = 621.35um x 228.253um = 176088um^2
+ |--- Mat Area      = 38.8344um x 7.13292um = 277.002um^2   (2.86274%)
+ |--- Subarray Area = 18.6306um x 3.56646um = 66.4451um^2   (2.98361%)
+ |--- TSV Area      = 81um^2
+ - Area Efficiency = 2.30571%
+Timing:
+ -  Read Latency = 1.73833ns
+ |--- TSV Latency    = 0.171162ps
+ |--- H-Tree Latency = 67.6977ps
+ |--- Mat Latency    = 1.67046ns
+    |--- Predecoder Latency = 67.5896ps
+    |--- Subarray Latency   = 1.60287ns
+       |--- Row Decoder Latency = 43.5397ps
+       |--- Bitline Latency     = 0.000546373ps,2.07502e+10s,6.8597e+09s
+       |--- Senseamp Latency    = 1.45399ns
+       |--- Mux Latency         = 81.7621ps
+       |--- Precharge Latency   = 12.6615ps
+       |--- Read Pulse   = 0ps
+ - Write Latency = 20.1711ns
+ |--- TSV Latency    = 0.0855811ps
+ |--- H-Tree Latency = 33.8488ps
+ |--- Mat Latency    = 20.1371ns
+    |--- Predecoder Latency = 67.5896ps
+    |--- Subarray Latency   = 20.0695ns
+       |--- Row Decoder Latency = 43.5397ps
+       |--- Charge Latency      = 2.42792ps
+ - Read Bandwidth  = 10.1782GB/s
+ - Write Bandwidth = 797.228MB/s
+Power:
+ -  Read Dynamic Energy = 270.298pJ
+ |--- TSV Dynamic Energy    = 233.139pJ
+ |--- H-Tree Dynamic Energy = 15.0625pJ
+ |--- Mat Dynamic Energy    = 0.690513pJ per mat
+    |--- Predecoder Dynamic Energy = 0.00735529pJ
+    |--- Subarray Dynamic Energy   = 0.170789pJ per active subarray
+       |--- Row Decoder Dynamic Energy = 0.00240997pJ
+       |--- Mux Decoder Dynamic Energy = 0.00365898pJ
+       |--- Bitline & Cell Read Energy = 0.000465276pJ
+       |--- Senseamp Dynamic Energy    = 0.150363pJ
+       |--- Mux Dynamic Energy         = 0.0008718pJ
+       |--- Precharge Dynamic Energy   = 0.0130196pJ
+ - Write Dynamic Energy = 634.469pJ
+ |--- TSV Dynamic Energy    = 233.139pJ
+ |--- H-Tree Dynamic Energy = 15.0625pJ
+ |--- Mat Dynamic Energy    = 12.0708pJ per mat
+    |--- Predecoder Dynamic Energy = 0.00735529pJ
+    |--- Subarray Dynamic Energy   = 3.01587pJ per active subarray
+       |--- Row Decoder Dynamic Energy = 0.00240997pJ
+       |--- Mux Decoder Dynamic Energy = 0.00365898pJ
+       |--- Mux Dynamic Energy         = 0.0008718pJ
+ - Leakage Power = 4.9708mW
+ |--- TSV Leakage              = 0pW
+ |--- H-Tree Leakage Power     = 0pW
+ |--- Mat Leakage Power        = 606.787nW per mat
+
+Finished!
