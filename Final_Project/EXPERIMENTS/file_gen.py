@@ -8,6 +8,10 @@ import argparse
 import subprocess
 import re
 import csv
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
 
 global tool
 global HOME
@@ -510,6 +514,31 @@ def run_simulations(filelist, tool_path, parse_only, high_density, debug):
         print("csv_report: ", csv_report)
 
 
+def create_plots():
+
+
+    plt.style.use('_mpl-gallery')
+
+    # make the data
+    np.random.seed(3)
+    x = 4 + np.random.normal(0, 2, 24)
+    y = 4 + np.random.normal(0, 2, len(x))
+    # size and color:
+    sizes = np.random.uniform(15, 80, len(x))
+    colors = np.random.uniform(15, 80, len(x))
+
+    # plot
+    fig, ax = plt.subplots()
+
+    ax.scatter(x, y, s=sizes, c=colors, vmin=0, vmax=100)
+
+    ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
+           ylim=(0, 8), yticks=np.arange(1, 8))
+
+    plt.show()
+
+
+
 if __name__ == "__main__":
 
     t0 = time.perf_counter()
@@ -528,12 +557,13 @@ if __name__ == "__main__":
 
         filelist = create_cfg_files_3d(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
 
-        filelist = create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
+        filelist = create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data_mlc()
 
     # run actual simulations for either NVSim or Destiny
     run_simulations(filelist, tool_path, parse_only, high_density, debug)
 
     # plotting like matplotlib
+    create_plots(filelist)
 
     t1 = time.perf_counter()
 
