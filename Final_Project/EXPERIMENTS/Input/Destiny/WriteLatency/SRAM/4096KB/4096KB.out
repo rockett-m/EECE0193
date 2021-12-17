@@ -62,7 +62,7 @@ Timing:
     |--- Predecoder Latency = 62.6971ps
     |--- Subarray Latency   = 113.765ps
        |--- Row Decoder Latency = 38.8665ps
-       |--- Bitline Latency     = 34.9807ps,0ps,0ps
+       |--- Bitline Latency     = 34.9807ps,1.58115e+10s,1.43728e+10s
        |--- Senseamp Latency    = 3.9879ps
        |--- Mux Latency         = 35.9301ps
        |--- Precharge Latency   = 18.6762ps

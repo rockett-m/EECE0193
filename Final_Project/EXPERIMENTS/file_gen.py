@@ -59,6 +59,7 @@ def cli_parse():
     parser.add_argument("--if", "--input_folder", action="store", dest="input_folder", help="input cfg files")
     parser.add_argument("--tool_path", action="store", dest="tool_path", help="root dir of nvsim or destiny with executable")
     parser.add_argument("--parse_only", action="store_true", help="don't run simulations, only parse logs")
+    parser.add_argument("--high_density", action="store_true", help="3D and MLC RRAM")
     parser.add_argument("--debug", action="store_true", help="debug mode (prints paths etc.)")
     args = parser.parse_args()
     return args
@@ -73,6 +74,7 @@ def setup_env(args):
     input_folder = args.input_folder
     tool_path = args.tool_path
     parse_only = args.parse_only
+    high_density = args.high_density
     debug = args.debug
 
     if re.search(r"NVSim", input_folder, re.I):
@@ -90,8 +92,9 @@ def setup_env(args):
     print(f'\ntree_root: {tree_root}')
     print(f'\ninput_folder: {input_folder}')
     print(f'\ntool_path: {tool_path}\n')
+    print(f'\nhigh_density: {high_density}\n')
 
-    return tree_root, input_folder, tool_path, parse_only, debug
+    return tree_root, input_folder, tool_path, parse_only, high_density, debug
 
 
 def build_cfg_data(opt_target, capacity, cell):
@@ -126,6 +129,46 @@ def build_cfg_data(opt_target, capacity, cell):
     else:
         print("need to enter NVSim or Destiny for cfg file generation")
         sys.exit()
+
+    return cfg_data
+
+
+def build_cfg_data_mlc(opt_target, capacity, cell):
+
+    cfg_data = ""
+    if (tool == "NVSim") or (tool == "Destiny"):
+        cfg_data = (f'-DesignTarget: RAM\n'
+                    f'-OptimizationTarget: {opt_target}\n'
+                    f'-EnablePruning: Yes\n'
+                    f'\n'
+                    f'-ProcessNode: 22\n'
+                    f'-Capacity (KB): {capacity}\n'
+                    f'-WordWidth (bit): 128\n'
+                    f'\n'
+                    f'-DeviceRoadmap: LSTP\n'
+                    f'-LocalWireType: LocalAggressive\n'
+                    f'-LocalWireRepeaterType: RepeatedNone\n'
+                    f'\n'
+                    f'-LocalWireUseLowSwing: No\n'
+                    f'-GlobalWireType: GlobalAggressive\n'
+                    f'-GlobalWireRepeaterType: RepeatedNone\n'
+                    f'-GlobalWireUseLowSwing: No\n'
+                    f'\n'
+                    f'-Routing: H-tree\n'
+                    f'-InternalSensing: true\n'
+                    f'-MemoryCellInputFile: ./cell_defs/{cell}.cell\n'
+                    f'\n'
+                    f'-Temperature (K): 350\n'
+                    f'-BufferDesignOptimization: latency\n'
+                    f'-UseCactiAssumption: Yes\n'
+                    f'\n'
+                    f'-StackedDieCount: 1\n'
+                    f'-MonolithicStackCount: 2\n\n')
+
+    else:
+        print("need to enter NVSim or Destiny for cfg file generation")
+        sys.exit()
+
     return cfg_data
 
 
@@ -198,6 +241,50 @@ def create_cfg_files_3d(tree_root, input_folder, parse_only, filelist, debug):
                 path_test(cfg_file)
 
                 cfg_data = build_cfg_data(opt_target, capacity, cell[3:]) # "RRAM"
+
+                if not parse_only:
+                    with open(cfg_file, 'w') as fc:
+                        if debug: print(cfg_file)
+                        fc.write(cfg_data)
+                    fc.close()
+
+                if debug:
+                    print(f'\ntree_root: {tree_root}\n'
+                    f'\ninput_folder: {input_folder}\n'
+                    f'\nopt_path: {opt_path}\n'
+                    f'\ncap_path: {cap_path}\n'
+                    f'\ncell_path: {cell_path}\n'
+                    f'\ncfg_file: {cfg_file}\n')
+                    sys.exit()
+
+                filelist.append(cfg_file)
+
+    return filelist
+
+
+def create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug):
+
+    for opt_target in ["ReadLatency", "WriteLatency", "ReadDynamicEnergy", "WriteDynamicEnergy", "ReadEDP", "WriteEDP", "LeakagePower", "Area"]:
+        opt_path = os.path.join(input_folder, opt_target)
+
+        for cell in ["RRAM_MLC"]:
+            cell_path = os.path.join(opt_path, cell)
+
+            for capacity in ["16", "32", "64", "128", "256", "512", "1024", "2048", "4096"]:
+                cfg_name = capacity + "KB"
+                cap_path = os.path.join(cell_path, cfg_name)
+
+                if not os.path.exists(cap_path): os.makedirs(cap_path, exist_ok=True)
+                path_test(cap_path)
+
+                cfg_filename = capacity + "KB.cfg"
+                cfg_file = os.path.join(cap_path, cfg_filename)
+                if not os.path.exists(cfg_file):
+                    cmd_create = "touch " + cfg_file; os.system(cmd_create)
+                cmd_chmod = "chmod 750 " + cfg_file; os.system(cmd_chmod)
+                path_test(cfg_file)
+
+                cfg_data = build_cfg_data_mlc(opt_target, capacity, cell) # "RRAM_MLC"
 
                 if not parse_only:
                     with open(cfg_file, 'w') as fc:
@@ -368,10 +455,14 @@ def parse_output_log(output_log):
   """
 
 
-def run_simulations(filelist, tool_path, parse_only, debug):
+def run_simulations(filelist, tool_path, parse_only, high_density, debug):
 
     if parse_only: # add csv headers
-        suffix = tool + "_report.csv"
+        suffix = ""
+        if tool == "Destiny" and high_density:
+            suffix = "HD_" + tool + "_report.csv"
+        else:
+            suffix = tool + "_report.csv"
         csv_report = os.path.join(tree_root, suffix)
         if os.path.exists(csv_report):
             os.remove(csv_report)
@@ -425,16 +516,22 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    tree_root, input_folder, tool_path, parse_only, debug = setup_env(args)
+    tree_root, input_folder, tool_path, parse_only, high_density, debug = setup_env(args)
 
-    # generates all cfg files for either NVSim or Destiny
-    filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+    filelist = []
 
-    if tool == "Destiny":
+    if not high_density:
+        # generates all cfg files for either NVSim or Destiny
+        filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+
+    if tool == "Destiny" and high_density:
+
         filelist = create_cfg_files_3d(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
 
+        filelist = create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
+
     # run actual simulations for either NVSim or Destiny
-    run_simulations(filelist, tool_path, parse_only, debug)
+    run_simulations(filelist, tool_path, parse_only, high_density, debug)
 
     # plotting like matplotlib
 
