@@ -565,6 +565,15 @@ if __name__ == "__main__":
 # --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
 # --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2 --parse_only
 
+# Destiny - run simulations + generate reports (3D and MLC)
+# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2 --high_density
+
+# Destiny - parse sim reports (3D and MLC)
+# python3 file_gen.py --tree_root /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS
+# --if /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/EXPERIMENTS/Input/Destiny
+# --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2 --high_density --parse_only
 
 ###################################################################################################################
 
