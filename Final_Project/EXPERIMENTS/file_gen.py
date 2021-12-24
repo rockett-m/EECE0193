@@ -597,7 +597,6 @@ def create_plots(sheet):
 
         # create 8 plots for each result metric, for each optimization target
         for opt_type, df in opt_targets.items():
-            # plot_4x2_boxplot(df, 'Capacity (KB)', opt_type)
             save_fig = (opt_type.split(':')[0]).replace(' ','') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ','')) + '.png'
             plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
 
@@ -613,24 +612,28 @@ def create_plots(sheet):
         df_nvs_opt_l_pow = df_nvs_2d.loc[216:251]
         df_nvs_opt_area = df_nvs_2d.loc[252:287]
 
-        opt_targets = {'NVSim: Optimization Target: Area': df_nvs_opt_area,
-                       'NVSim: Optimization Target: Leakage Power': df_nvs_opt_l_pow,
-                       'NVSim: Optimization Target: Read Latency': df_nvs_opt_r_lat,
-                       'NVSim: Optimization Target: Write Latency': df_nvs_opt_w_lat,
-                       'NVSim: Optimization Target: Read Dynamic Energy': df_nvs_opt_rde,
-                       'NVSim: Optimization Target: Write Dynamic Energy': df_nvs_opt_wde,
-                       'NVSim: Optimization Target: Read Energy Delay Product': df_nvs_opt_r_edp,
-                       'NVSim: Optimization Target: Write Energy Delay Product': df_nvs_opt_w_edp, }
+        opt_targets = {'NVSim 2D: Optimization Target: Area':                       df_nvs_opt_area,
+                       'NVSim 2D: Optimization Target: Leakage Power':              df_nvs_opt_l_pow,
+                       'NVSim 2D: Optimization Target: Read Latency':               df_nvs_opt_r_lat,
+                       'NVSim 2D: Optimization Target: Write Latency':              df_nvs_opt_w_lat,
+                       'NVSim 2D: Optimization Target: Read Dynamic Energy':        df_nvs_opt_rde,
+                       'NVSim 2D: Optimization Target: Write Dynamic Energy':       df_nvs_opt_wde,
+                       'NVSim 2D: Optimization Target: Read Energy Delay Product':  df_nvs_opt_r_edp,
+                       'NVSim 2D: Optimization Target: Write Energy Delay Product': df_nvs_opt_w_edp, }
 
         # create 8 plots for each result metric, for each optimization target
         for opt_type, df in opt_targets.items():
-            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type)
+            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
+            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
 
     elif sheet == "DESTINY HD":
         pass
 
     else:
-        pass
+        print('\nSheet not found, please review code\n')
+        sys.exit(-1)
+
+
 
 if __name__ == "__main__":
 
@@ -659,9 +662,9 @@ if __name__ == "__main__":
 
     else:
         # create graphs of results
-        create_plots("DESTINY 2D")
-        # create_plots('NVSIM 2D')
-        # create_plots('DESTINY HD')
+        # create_plots("DESTINY 2D")
+        create_plots("NVSIM 2D")
+        # create_plots("DESTINY HD")
 
     t1 = time.perf_counter()
 
