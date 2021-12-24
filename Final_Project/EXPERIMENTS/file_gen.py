@@ -627,7 +627,56 @@ def create_plots(sheet):
             plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
 
     elif sheet == "DESTINY HD":
-        pass
+
+        # destiny High Density with 8 optimizations
+
+        # 3D RRAM
+        df_dst_3d_opt_r_lat = df_dst_hd.loc[0:8]
+        df_dst_3d_opt_w_lat = df_dst_hd.loc[9:17]
+        df_dst_3d_opt_rde = df_dst_hd.loc[18:26]
+        df_dst_3d_opt_wde = df_dst_hd.loc[27:35]
+        df_dst_3d_opt_r_edp = df_dst_hd.loc[36:44]
+        df_dst_3d_opt_w_edp = df_dst_hd.loc[45:53]
+        df_dst_3d_opt_l_pow = df_dst_hd.loc[54:62]
+        df_dst_3d_opt_area = df_dst_hd.loc[63:71]
+
+        opt_targets = {'Destiny 3D: Optimization Target: Area':                       df_dst_3d_opt_area,
+                       'Destiny 3D: Optimization Target: Leakage Power':              df_dst_3d_opt_l_pow,
+                       'Destiny 3D: Optimization Target: Read Latency':               df_dst_3d_opt_r_lat,
+                       'Destiny 3D: Optimization Target: Write Latency':              df_dst_3d_opt_w_lat,
+                       'Destiny 3D: Optimization Target: Read Dynamic Energy':        df_dst_3d_opt_rde,
+                       'Destiny 3D: Optimization Target: Write Dynamic Energy':       df_dst_3d_opt_wde,
+                       'Destiny 3D: Optimization Target: Read Energy Delay Product':  df_dst_3d_opt_r_edp,
+                       'Destiny 3D: Optimization Target: Write Energy Delay Product': df_dst_3d_opt_w_edp, }
+
+        # create 8 plots for each result metric, for each optimization target
+        for opt_type, df in opt_targets.items():
+            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
+            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+
+        # MLC RRAM
+        df_dst_mlc_opt_r_lat = df_dst_hd.loc[72:80]
+        df_dst_mlc_opt_w_lat = df_dst_hd.loc[81:89]
+        df_dst_mlc_opt_rde = df_dst_hd.loc[90:98]
+        df_dst_mlc_opt_wde = df_dst_hd.loc[99:107]
+        df_dst_mlc_opt_r_edp = df_dst_hd.loc[108:116]
+        df_dst_mlc_opt_w_edp = df_dst_hd.loc[117:125]
+        df_dst_mlc_opt_l_pow = df_dst_hd.loc[126:134]
+        df_dst_mlc_opt_area = df_dst_hd.loc[135:143]
+        
+        opt_targets = {'Destiny MLC: Optimization Target: Area':                       df_dst_mlc_opt_area,
+                       'Destiny MLC: Optimization Target: Leakage Power':              df_dst_mlc_opt_l_pow,
+                       'Destiny MLC: Optimization Target: Read Latency':               df_dst_mlc_opt_r_lat,
+                       'Destiny MLC: Optimization Target: Write Latency':              df_dst_mlc_opt_w_lat,
+                       'Destiny MLC: Optimization Target: Read Dynamic Energy':        df_dst_mlc_opt_rde,
+                       'Destiny MLC: Optimization Target: Write Dynamic Energy':       df_dst_mlc_opt_wde,
+                       'Destiny MLC: Optimization Target: Read Energy Delay Product':  df_dst_mlc_opt_r_edp,
+                       'Destiny MLC: Optimization Target: Write Energy Delay Product': df_dst_mlc_opt_w_edp, }
+
+        # create 8 plots for each result metric, for each optimization target
+        for opt_type, df in opt_targets.items():
+            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
+            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
 
     else:
         print('\nSheet not found, please review code\n')
@@ -661,10 +710,10 @@ if __name__ == "__main__":
         run_simulations(filelist, tool_path, parse_only, high_density, debug)
 
     else:
-        # create graphs of results
+        # create graphs of results and saves figures
         # create_plots("DESTINY 2D")
-        create_plots("NVSIM 2D")
-        # create_plots("DESTINY HD")
+        # create_plots("NVSIM 2D")
+        create_plots("DESTINY HD")
 
     t1 = time.perf_counter()
 
