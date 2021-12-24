@@ -571,11 +571,17 @@ def plot_4x2_boxplot(dataframe, xaxis, title, cell_type=None, savefile=None, sho
     if savefile: plt.savefig(savefile)
     if show: plt.show()
 
+def plot_and_save(opt_targets: dict): # helper function
+    # create 8 plots for each result metric, for each optimization target
+    for opt_type, df in opt_targets.items():
+        save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (
+            opt_type.split(':')[2].replace(' ', '')) + '.png'
+        plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+
 
 def create_plots(sheet):
 
     if sheet == "DESTINY 2D":
-
         # destiny 2D with 8 optimizations
         df_dst_2d_opt_r_lat = df_dst_2d.loc[0:35]
         df_dst_2d_opt_w_lat = df_dst_2d.loc[36:71]
@@ -595,13 +601,9 @@ def create_plots(sheet):
                        'Destiny 2D: Optimization Target: Read Energy Delay Product':  df_dst_2d_opt_r_edp,
                        'Destiny 2D: Optimization Target: Write Energy Delay Product': df_dst_2d_opt_w_edp, }
 
-        # create 8 plots for each result metric, for each optimization target
-        for opt_type, df in opt_targets.items():
-            save_fig = (opt_type.split(':')[0]).replace(' ','') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ','')) + '.png'
-            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+        plot_and_save(opt_targets)
 
     elif sheet == "NVSIM 2D":
-
         # nvsim 2D with 8 optimizations
         df_nvs_opt_r_lat = df_nvs_2d.loc[0:35]
         df_nvs_opt_w_lat = df_nvs_2d.loc[36:71]
@@ -621,13 +623,9 @@ def create_plots(sheet):
                        'NVSim 2D: Optimization Target: Read Energy Delay Product':  df_nvs_opt_r_edp,
                        'NVSim 2D: Optimization Target: Write Energy Delay Product': df_nvs_opt_w_edp, }
 
-        # create 8 plots for each result metric, for each optimization target
-        for opt_type, df in opt_targets.items():
-            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
-            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+        plot_and_save(opt_targets)
 
     elif sheet == "DESTINY HD":
-
         # destiny High Density with 8 optimizations
 
         # 3D RRAM
@@ -649,10 +647,7 @@ def create_plots(sheet):
                        'Destiny 3D: Optimization Target: Read Energy Delay Product':  df_dst_3d_opt_r_edp,
                        'Destiny 3D: Optimization Target: Write Energy Delay Product': df_dst_3d_opt_w_edp, }
 
-        # create 8 plots for each result metric, for each optimization target
-        for opt_type, df in opt_targets.items():
-            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
-            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+        plot_and_save(opt_targets)
 
         # MLC RRAM
         df_dst_mlc_opt_r_lat = df_dst_hd.loc[72:80]
@@ -673,10 +668,7 @@ def create_plots(sheet):
                        'Destiny MLC: Optimization Target: Read Energy Delay Product':  df_dst_mlc_opt_r_edp,
                        'Destiny MLC: Optimization Target: Write Energy Delay Product': df_dst_mlc_opt_w_edp, }
 
-        # create 8 plots for each result metric, for each optimization target
-        for opt_type, df in opt_targets.items():
-            save_fig = (opt_type.split(':')[0]).replace(' ', '') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ', '')) + '.png'
-            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+        plot_and_save(opt_targets)
 
     else:
         print('\nSheet not found, please review code\n')
@@ -711,6 +703,7 @@ if __name__ == "__main__":
 
     else:
         # create graphs of results and saves figures
+        # for sheet_name in [ "DESTINY 2D", "NVSIM 2D", "DESTINY HD" ]: create_plots(sheet_name)
         # create_plots("DESTINY 2D")
         # create_plots("NVSIM 2D")
         create_plots("DESTINY HD")
