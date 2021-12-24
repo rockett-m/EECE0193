@@ -8,14 +8,27 @@ import argparse
 import subprocess
 import re
 import csv
+import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 
-global tool
-global HOME
+global tool, HOME
 HOME = os.getcwd()
+
+# read in csv reports as dataframes
+global df_nvs_2d, df_dst_2d, df_dst_hd
+df_nvs_2d = pd.read_csv("NVSim_report.csv")
+df_dst_2d = pd.read_csv("Destiny_report.csv")
+df_dst_hd = pd.read_csv("HD_Destiny_report.csv")
+
+# n*[0:8] =   STTRAM
+# n*[9:17] =  SRAM
+# n*[18:26] = RRAM
+# n*[27:35] = PCRAM
 
 
 # helper functions
@@ -64,6 +77,7 @@ def cli_parse():
     parser.add_argument("--tool_path", action="store", dest="tool_path", help="root dir of nvsim or destiny with executable")
     parser.add_argument("--parse_only", action="store_true", help="don't run simulations, only parse logs")
     parser.add_argument("--high_density", action="store_true", help="3D and MLC RRAM")
+    parser.add_argument("--visualize", action="store_true", help="create plots")
     parser.add_argument("--debug", action="store_true", help="debug mode (prints paths etc.)")
     args = parser.parse_args()
     return args
@@ -79,26 +93,28 @@ def setup_env(args):
     tool_path = args.tool_path
     parse_only = args.parse_only
     high_density = args.high_density
+    visualize = args.visualize
     debug = args.debug
 
-    if re.search(r"NVSim", input_folder, re.I):
-        tool = "NVSim"
-    elif re.search(r"Destiny", input_folder, re.I):
-        tool = "Destiny"
-    else:
-        print("expecting NVsim or Destiny in the input folder path")
-        sys.exit()
+    if not visualize: # visualize supersedes all this checking
+        if re.search(r"NVSim", input_folder, re.I):
+            tool = "NVSim"
+        elif re.search(r"Destiny", input_folder, re.I):
+            tool = "Destiny"
+        else:
+            print("expecting NVsim or Destiny in the input folder path")
+            sys.exit()
 
-    for x in [ tree_root, input_folder, tool_path ]:
-        path_test(x)
+        for x in [ tree_root, input_folder, tool_path ]:
+            path_test(x)
 
-    print(f'\nHOME: {HOME}')
-    print(f'\ntree_root: {tree_root}')
-    print(f'\ninput_folder: {input_folder}')
-    print(f'\ntool_path: {tool_path}\n')
-    print(f'\nhigh_density: {high_density}\n')
+        print(f'\nHOME: {HOME}')
+        print(f'\ntree_root: {tree_root}')
+        print(f'\ninput_folder: {input_folder}')
+        print(f'\ntool_path: {tool_path}\n')
+        print(f'\nhigh_density: {high_density}\n')
 
-    return tree_root, input_folder, tool_path, parse_only, high_density, debug
+    return tree_root, input_folder, tool_path, parse_only, high_density, visualize, debug
 
 
 def build_cfg_data(opt_target, capacity, cell):
@@ -514,30 +530,107 @@ def run_simulations(filelist, tool_path, parse_only, high_density, debug):
         print("csv_report: ", csv_report)
 
 
-def create_plots():
+# set type to any plot type in the seaborn reference: https://seaborn.pydata.org/api.html
+def graph(plot_type, xax, yax, df): # unused helper
+    ax = getattr(sns, plot_type)(x=xax, y=yax, data=df)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right")
+    plt.rcParams["xtick.labelsize"] = 7
+    plt.xlabel(xax); plt.ylabel(yax)
+    plt.title(xax + " vs " + yax)
+    plt.tight_layout(); plt.show()
 
 
-    plt.style.use('_mpl-gallery')
+# expects 36 row dataframe
+def plot_4x2_boxplot(dataframe, xaxis, title, cell_type=None, savefile=None, show=False): # helper function
+    if len(dataframe) % 9 != 0:
+        print(f'\nexpecting dataframe lengths in multiples of 9\n'); sys.exit(-1)
+    if cell_type == 'STTRAM':
+        dataframe = dataframe.loc[0:8]
+    elif cell_type == 'SRAM':
+        dataframe = dataframe.loc[9:17]
+    elif cell_type == 'RRAM':
+        dataframe = dataframe.loc[18:26]
+    elif cell_type == 'PCRAM':
+        dataframe = dataframe.loc[27:35]
 
-    # make the data
-    np.random.seed(3)
-    x = 4 + np.random.normal(0, 2, 24)
-    y = 4 + np.random.normal(0, 2, len(x))
-    # size and color:
-    sizes = np.random.uniform(15, 80, len(x))
-    colors = np.random.uniform(15, 80, len(x))
+    if cell_type is not None: title = f'{cell_type}: {title}'
 
-    # plot
-    fig, ax = plt.subplots()
+    fig, axes = plt.subplots(4, 2, figsize=(24, 18))
+    fig.suptitle(f'{title}')
 
-    ax.scatter(x, y, s=sizes, c=colors, vmin=0, vmax=100)
+    # sns.boxplot(ax=axes[0, 0], data=dataframe, x=f'{xaxis}', y='Total Area (um^2)', labels=['STTRAM', 'SRAM', 'RRAM', 'PCRAM'])
+    sns.boxplot(ax=axes[0, 0], data=dataframe, x=f'{xaxis}', y='Total Area (um^2)')
+    sns.boxplot(ax=axes[0, 1], data=dataframe, x=f'{xaxis}', y='Leakage Power (uW)')
+    sns.boxplot(ax=axes[1, 0], data=dataframe, x=f'{xaxis}', y='Read Latency (ns)')
+    sns.boxplot(ax=axes[1, 1], data=dataframe, x=f'{xaxis}', y='Write Latency (ns)')
+    sns.boxplot(ax=axes[2, 0], data=dataframe, x=f'{xaxis}', y='Read Bandwidth (GB/s)')
+    sns.boxplot(ax=axes[2, 1], data=dataframe, x=f'{xaxis}', y='Write Bandwidth (GB/s)')
+    sns.boxplot(ax=axes[3, 0], data=dataframe, x=f'{xaxis}', y='Read Dynamic Energy (pJ)')
+    sns.boxplot(ax=axes[3, 1], data=dataframe, x=f'{xaxis}', y='Write Dynamic Energy (pJ)')
 
-    ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
-           ylim=(0, 8), yticks=np.arange(1, 8))
-
-    plt.show()
+    if savefile: plt.savefig(savefile)
+    if show: plt.show()
 
 
+def create_plots(sheet):
+
+    if sheet == "DESTINY 2D":
+
+        # destiny 2D with 8 optimizations
+        df_dst_2d_opt_r_lat = df_dst_2d.loc[0:35]
+        df_dst_2d_opt_w_lat = df_dst_2d.loc[36:71]
+        df_dst_2d_opt_rde =   df_dst_2d.loc[72:107]
+        df_dst_2d_opt_wde =   df_dst_2d.loc[108:143]
+        df_dst_2d_opt_r_edp = df_dst_2d.loc[144:179]
+        df_dst_2d_opt_w_edp = df_dst_2d.loc[180:215]
+        df_dst_2d_opt_l_pow = df_dst_2d.loc[216:251]
+        df_dst_2d_opt_area =  df_dst_2d.loc[252:287]
+
+        opt_targets = {'Destiny 2D: Optimization Target: Area':                       df_dst_2d_opt_area,
+                       'Destiny 2D: Optimization Target: Leakage Power':              df_dst_2d_opt_l_pow,
+                       'Destiny 2D: Optimization Target: Read Latency':               df_dst_2d_opt_r_lat,
+                       'Destiny 2D: Optimization Target: Write Latency':              df_dst_2d_opt_w_lat,
+                       'Destiny 2D: Optimization Target: Read Dynamic Energy':        df_dst_2d_opt_rde,
+                       'Destiny 2D: Optimization Target: Write Dynamic Energy':       df_dst_2d_opt_wde,
+                       'Destiny 2D: Optimization Target: Read Energy Delay Product':  df_dst_2d_opt_r_edp,
+                       'Destiny 2D: Optimization Target: Write Energy Delay Product': df_dst_2d_opt_w_edp, }
+
+        # create 8 plots for each result metric, for each optimization target
+        for opt_type, df in opt_targets.items():
+            # plot_4x2_boxplot(df, 'Capacity (KB)', opt_type)
+            save_fig = (opt_type.split(':')[0]).replace(' ','') + '_OptTgt_' + (opt_type.split(':')[2].replace(' ','')) + '.png'
+            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type, savefile=save_fig, show=False)
+
+    elif sheet == "NVSIM 2D":
+
+        # nvsim 2D with 8 optimizations
+        df_nvs_opt_r_lat = df_nvs_2d.loc[0:35]
+        df_nvs_opt_w_lat = df_nvs_2d.loc[36:71]
+        df_nvs_opt_rde = df_nvs_2d.loc[72:107]
+        df_nvs_opt_wde = df_nvs_2d.loc[108:143]
+        df_nvs_opt_r_edp = df_nvs_2d.loc[144:179]
+        df_nvs_opt_w_edp = df_nvs_2d.loc[180:215]
+        df_nvs_opt_l_pow = df_nvs_2d.loc[216:251]
+        df_nvs_opt_area = df_nvs_2d.loc[252:287]
+
+        opt_targets = {'NVSim: Optimization Target: Area': df_nvs_opt_area,
+                       'NVSim: Optimization Target: Leakage Power': df_nvs_opt_l_pow,
+                       'NVSim: Optimization Target: Read Latency': df_nvs_opt_r_lat,
+                       'NVSim: Optimization Target: Write Latency': df_nvs_opt_w_lat,
+                       'NVSim: Optimization Target: Read Dynamic Energy': df_nvs_opt_rde,
+                       'NVSim: Optimization Target: Write Dynamic Energy': df_nvs_opt_wde,
+                       'NVSim: Optimization Target: Read Energy Delay Product': df_nvs_opt_r_edp,
+                       'NVSim: Optimization Target: Write Energy Delay Product': df_nvs_opt_w_edp, }
+
+        # create 8 plots for each result metric, for each optimization target
+        for opt_type, df in opt_targets.items():
+            plot_4x2_boxplot(df, 'Capacity (KB)', opt_type)
+
+    elif sheet == "DESTINY HD":
+        pass
+
+    else:
+        pass
 
 if __name__ == "__main__":
 
@@ -545,25 +638,30 @@ if __name__ == "__main__":
 
     args = cli_parse()
 
-    tree_root, input_folder, tool_path, parse_only, high_density, debug = setup_env(args)
+    tree_root, input_folder, tool_path, parse_only, high_density, visualize, debug = setup_env(args)
 
     filelist = []
 
-    if not high_density:
-        # generates all cfg files for either NVSim or Destiny
-        filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
+    if not visualize:
 
-    if tool == "Destiny" and high_density:
+        if not high_density:
+            # generates all cfg files for either NVSim or Destiny
+            filelist = create_cfg_files(tree_root, input_folder, parse_only, debug) # calls build_cfg_data()
 
-        filelist = create_cfg_files_3d(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
+        if tool == "Destiny" and high_density:
 
-        filelist = create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data_mlc()
+            filelist = create_cfg_files_3d(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data()
 
-    # run actual simulations for either NVSim or Destiny
-    run_simulations(filelist, tool_path, parse_only, high_density, debug)
+            filelist = create_cfg_files_mlc(tree_root, input_folder, parse_only, filelist, debug) # calls build_cfg_data_mlc()
 
-    # plotting like matplotlib
-    create_plots(filelist)
+        # run actual simulations for either NVSim or Destiny
+        run_simulations(filelist, tool_path, parse_only, high_density, debug)
+
+    else:
+        # create graphs of results
+        create_plots("DESTINY 2D")
+        # create_plots('NVSIM 2D')
+        # create_plots('DESTINY HD')
 
     t1 = time.perf_counter()
 
@@ -606,6 +704,30 @@ if __name__ == "__main__":
 # --tool_path /Users/sudo/CodeProjects/Tufts/EECE0193/Final_Project/destiny_v2 --high_density --parse_only
 
 ###################################################################################################################
+
+
+"""
+    plt.style.use('_mpl-gallery')
+
+    # make the data
+    np.random.seed(3)
+    x = 4 + np.random.normal(0, 2, 24)
+    y = 4 + np.random.normal(0, 2, len(x))
+    # size and color:
+    sizes = np.random.uniform(15, 80, len(x))
+    colors = np.random.uniform(15, 80, len(x))
+
+    # plot
+    fig, ax = plt.subplots()
+
+    ax.scatter(x, y, s=sizes, c=colors, vmin=0, vmax=100)
+
+    ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
+           ylim=(0, 8), yticks=np.arange(1, 8))
+
+    plt.show()
+
+"""
 
 
 """ parameters that change for each dir / test
