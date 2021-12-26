@@ -675,31 +675,48 @@ def create_plots(sheet):
         sys.exit(-1)
 
 
-def test_multiplot_general(opt_target, indices, count, xname, yname, show=False, save=False): # helper function for rram_4way_comparison()
+def form_dataframe_4way(indices, xname, yname):
     # Read Latency Optimized - RRAM cells
-    xaxis = df_dst_2d.loc[indices[0]:indices[0] + 8][xname]
-    df0 = df_dst_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM
-    df1 = df_nvs_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM
-    df2 = df_dst_hd.loc[indices[1]:indices[1] + 8][yname]  # 3D  RRAM
-    df3 = df_dst_hd.loc[indices[2]:indices[2] + 8][yname]  # MLC RRAM
+    xaxis = df_nvs_2d.loc[indices[0]:indices[0] + 8][xname]  # 16 - 4096 KB
+    df0 =   df_nvs_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM NVS
+    df1 =   df_dst_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM DST
+    df2 =   df_dst_hd.loc[indices[1]:indices[1] + 8][yname]  # 3D  RRAM DST
+    df3 =   df_dst_hd.loc[indices[2]:indices[2] + 8][yname]  # MLC RRAM DST
     # drop removes Nan values
-    df = pd.concat([xaxis.reset_index(drop=True), df0.reset_index(drop=True), df1.reset_index(drop=True), \
-                    df2.reset_index(drop=True), df3.reset_index(drop=True)], ignore_index=True, join="outer",
-                   axis=1)
+    df = pd.concat([xaxis.reset_index(drop=True), df0.reset_index(drop=True), df1.reset_index(drop=True),
+                    df2.reset_index(drop=True), df3.reset_index(drop=True)], ignore_index=True, join="outer", axis=1)
+    # headers
+    df.columns = ["Capacity (KB)", "NVSim 2D SLC RRAM", "Destiny 2D SLC RRAM", "Destiny 3D RRAM", "Destiny MLC RRAM"]
+    return df
 
-    df.columns = ["Capacity (KB)", "Destiny 2D SLC RRAM", "NVSim 2D SLC RRAM", "Destiny 3D RRAM",
-                  "Destiny MLC RRAM"]  # headers
 
+def form_dataframe_3way(indices, xname, yname): # does not include MLC RRAM (does not have R/W BW result)
+    # Read Latency Optimized - RRAM cells
+    xaxis = df_nvs_2d.loc[indices[0]:indices[0] + 8][xname]  # 16 - 4096 KB
+    df0 =   df_nvs_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM NVS
+    df1 =   df_dst_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM DST
+    df2 =   df_dst_hd.loc[indices[1]:indices[1] + 8][yname]  # 3D  RRAM DST
+    # df3 =   df_dst_hd.loc[indices[2]:indices[2] + 8][yname]  # MLC RRAM DST   # does not have R/W BW result
+    # drop removes Nan values
+    df = pd.concat([xaxis.reset_index(drop=True), df0.reset_index(drop=True), df1.reset_index(drop=True),
+                    df2.reset_index(drop=True)], ignore_index=True, join="outer", axis=1)
+    # headers
+    df.columns = ["Capacity (KB)", "NVSim 2D SLC RRAM", "Destiny 2D SLC RRAM", "Destiny 3D RRAM"]
+    return df
+
+
+def graph_rram(df, opt_target, count, xname, yname, show=False, save=False):
     df = df.reset_index().melt(f'{xname}', var_name='', value_name='vals')
     df = df.iloc[9:, :]  # trim off bad index rows
 
     g = sns.catplot(x=f'{xname}', y="vals", hue='', data=df, kind='bar', legend=False)
     g.set(title=f'{xname} vs {yname}\n\nOptimization Target: [{opt_target}]')
     g.set(xlabel=f'{xname}', ylabel=f'{yname}')
-    plt.ticklabel_format(style='plain', axis='y')
+    # plt.ticklabel_format(style='plain', axis='y')
+    plt.ticklabel_format(style='plain', axis='y', useOffset=False)
 
     plt.legend(loc='upper left')
-    plt.yscale('log')
+    # plt.yscale('log')
     plt.tight_layout()
 
     if show: plt.show()
@@ -720,12 +737,23 @@ def rram_4way_comparison():
                    'Area':                       [252, 63, 133]}
 
     count = 0
+    # """
     # Read Bandwidth (GB/s) and Write Bandwidth (GB/s) not recorded for MLC RRAM, so excluding from comparisons
-    for result in ['Total Area (um^2)', 'Read Dynamic Energy (pJ)', 'Write Latency (ns)', 'Read Dynamic Energy (pJ)',
+    for y_var_result in ['Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Dynamic Energy (pJ)',
                    'Write Dynamic Energy (pJ)', 'Leakage Power (uW)']:
-        for opt_target, indices in opt_targets.items():
-            test_multiplot_general(opt_target, indices, count, xname="Capacity (KB)", yname=result, save=True)
-            count += 1
+        for opt_target, indices in opt_targets.items(): # 48 graphs with capacity as fixed X value
+            for x_var_result in ["Capacity (KB)"]:
+                df = form_dataframe_4way(indices, xname=x_var_result, yname=y_var_result)
+                graph_rram(df, opt_target, count, xname=x_var_result, yname=y_var_result, save=True)
+                count += 1
+    # """
+    # for y_var_result in ['Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)']: # exclude 3D RRAM
+    #     for opt_target, indices in opt_targets.items(): # 16 graphs with capacity as fixed X value
+    #         for x_var_result in ["Capacity (KB)"]:
+    #             df = form_dataframe_3way(indices, xname=x_var_result, yname=y_var_result)
+    #             graph_rram(df, opt_target, count, xname=x_var_result, yname=y_var_result, save=True)
+    #             count += 1
+
 
 if __name__ == "__main__":
 
