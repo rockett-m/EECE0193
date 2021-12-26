@@ -675,6 +675,57 @@ def create_plots(sheet):
         sys.exit(-1)
 
 
+def test_multiplot_general(opt_target, indices, count, xname, yname, show=False, save=False): # helper function for rram_4way_comparison()
+    # Read Latency Optimized - RRAM cells
+    xaxis = df_dst_2d.loc[indices[0]:indices[0] + 8][xname]
+    df0 = df_dst_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM
+    df1 = df_nvs_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC RRAM
+    df2 = df_dst_hd.loc[indices[1]:indices[1] + 8][yname]  # 3D  RRAM
+    df3 = df_dst_hd.loc[indices[2]:indices[2] + 8][yname]  # MLC RRAM
+    # drop removes Nan values
+    df = pd.concat([xaxis.reset_index(drop=True), df0.reset_index(drop=True), df1.reset_index(drop=True), \
+                    df2.reset_index(drop=True), df3.reset_index(drop=True)], ignore_index=True, join="outer",
+                   axis=1)
+
+    df.columns = ["Capacity (KB)", "Destiny 2D SLC RRAM", "NVSim 2D SLC RRAM", "Destiny 3D RRAM",
+                  "Destiny MLC RRAM"]  # headers
+
+    df = df.reset_index().melt(f'{xname}', var_name='', value_name='vals')
+    df = df.iloc[9:, :]  # trim off bad index rows
+
+    g = sns.catplot(x=f'{xname}', y="vals", hue='', data=df, kind='bar', legend=False)
+    g.set(title=f'{xname} vs {yname}\n\nOptimization Target: [{opt_target}]')
+    g.set(xlabel=f'{xname}', ylabel=f'{yname}')
+    plt.ticklabel_format(style='plain', axis='y')
+
+    plt.legend(loc='upper left')
+    plt.yscale('log')
+    plt.tight_layout()
+
+    if show: plt.show()
+    if save:
+        opt_tgt = opt_target.replace(' ', '')
+        plt.savefig(f'RRAM_OptTgt_{opt_tgt}_{count}.png')
+
+
+def rram_4way_comparison():
+    # 0:8, 9:17, 18:26, 27:35;  36:44, 45:53, 54:62, 63:71
+    opt_targets = {'Read Latency':               [18, 0, 72],
+                   'Write Latency':              [54, 9, 81],
+                   'Read Dynamic Energy':        [72, 18, 90],
+                   'Write Dynamic Energy':       [108, 27, 99],
+                   'Read Energy Delay Product':  [144, 36, 108],
+                   'Write Energy Delay Product': [180, 45, 117],
+                   'Leakage Power':              [216, 54, 126],
+                   'Area':                       [252, 63, 133]}
+
+    count = 0
+    # Read Bandwidth (GB/s) and Write Bandwidth (GB/s) not recorded for MLC RRAM, so excluding from comparisons
+    for result in ['Total Area (um^2)', 'Read Dynamic Energy (pJ)', 'Write Latency (ns)', 'Read Dynamic Energy (pJ)',
+                   'Write Dynamic Energy (pJ)', 'Leakage Power (uW)']:
+        for opt_target, indices in opt_targets.items():
+            test_multiplot_general(opt_target, indices, count, xname="Capacity (KB)", yname=result, save=True)
+            count += 1
 
 if __name__ == "__main__":
 
@@ -706,7 +757,9 @@ if __name__ == "__main__":
         # for sheet_name in [ "DESTINY 2D", "NVSIM 2D", "DESTINY HD" ]: create_plots(sheet_name)
         # create_plots("DESTINY 2D")
         # create_plots("NVSIM 2D")
-        create_plots("DESTINY HD")
+        # create_plots("DESTINY HD")
+
+        rram_4way_comparison()
 
     t1 = time.perf_counter()
 
