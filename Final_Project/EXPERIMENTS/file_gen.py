@@ -675,6 +675,28 @@ def create_plots(sheet):
         sys.exit(-1)
 
 
+def graph_multi_compare(df, opt_target, count, xname, yname, log=False, show=False, save=False):
+    df = df.reset_index().melt(f'{xname}', var_name='', value_name='vals')
+    df = df.iloc[9:, :]  # trim off bad index rows
+
+    g = sns.catplot(x=f'{xname}', y="vals", hue='', data=df, kind='bar', legend=False, height=3.5, aspect=15 / 8)
+    g.set(title=f'{xname} vs {yname}\n\nOptimization Target: [{opt_target}]')
+    g.set(xlabel=f'{xname}', ylabel=f'{yname}')
+    # plt.ticklabel_format(style='plain', axis='y')
+
+    plt.rcParams["axes.titlesize"] = 10
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), prop={"size": 7})
+
+    if log:
+        plt.yscale('log')
+    plt.tight_layout()
+
+    if show: plt.show()
+    if save:
+        opt_tgt = opt_target.replace(' ', '')
+        plt.savefig(f'RRAM_OptTgt_{opt_tgt}_{count}.png')
+
+
 def form_dataframe_4way(indices, xname, yname):
     # Read Latency Optimized - RRAM cells
     xaxis = df_nvs_2d.loc[indices[0]:indices[0] + 8][xname]  # 16 - 4096 KB
@@ -705,54 +727,79 @@ def form_dataframe_3way(indices, xname, yname): # does not include MLC RRAM (doe
     return df
 
 
-def graph_rram(df, opt_target, count, xname, yname, show=False, save=False):
-    df = df.reset_index().melt(f'{xname}', var_name='', value_name='vals')
-    df = df.iloc[9:, :]  # trim off bad index rows
-
-    g = sns.catplot(x=f'{xname}', y="vals", hue='', data=df, kind='bar', legend=False)
-    g.set(title=f'{xname} vs {yname}\n\nOptimization Target: [{opt_target}]')
-    g.set(xlabel=f'{xname}', ylabel=f'{yname}')
-    # plt.ticklabel_format(style='plain', axis='y')
-    plt.ticklabel_format(style='plain', axis='y', useOffset=False)
-
-    plt.legend(loc='upper left')
-    # plt.yscale('log')
-    plt.tight_layout()
-
-    if show: plt.show()
-    if save:
-        opt_tgt = opt_target.replace(' ', '')
-        plt.savefig(f'RRAM_OptTgt_{opt_tgt}_{count}.png')
-
-
-def rram_4way_comparison():
+def rram_multi_comparison(option):
     # 0:8, 9:17, 18:26, 27:35;  36:44, 45:53, 54:62, 63:71
     opt_targets = {'Read Latency':               [18, 0, 72],
                    'Write Latency':              [54, 9, 81],
-                   'Read Dynamic Energy':        [72, 18, 90],
-                   'Write Dynamic Energy':       [108, 27, 99],
-                   'Read Energy Delay Product':  [144, 36, 108],
-                   'Write Energy Delay Product': [180, 45, 117],
-                   'Leakage Power':              [216, 54, 126],
-                   'Area':                       [252, 63, 133]}
+                   'Read Dynamic Energy':        [90, 18, 90],
+                   'Write Dynamic Energy':       [126, 27, 99],
+                   'Read Energy Delay Product':  [162, 36, 108],
+                   'Write Energy Delay Product': [198, 45, 117],
+                   'Leakage Power':              [234, 54, 126],
+                   'Area':                       [270, 63, 135]}
 
     count = 0
-    # """
-    # Read Bandwidth (GB/s) and Write Bandwidth (GB/s) not recorded for MLC RRAM, so excluding from comparisons
-    for y_var_result in ['Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Dynamic Energy (pJ)',
-                   'Write Dynamic Energy (pJ)', 'Leakage Power (uW)']:
-        for opt_target, indices in opt_targets.items(): # 48 graphs with capacity as fixed X value
+
+    if option == "4way":
+        # Read Bandwidth (GB/s) and Write Bandwidth (GB/s) not recorded for MLC RRAM, so excluding from comparisons
+        for y_var_result in ['Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Dynamic Energy (pJ)',
+                       'Write Dynamic Energy (pJ)', 'Leakage Power (uW)']:
+            for opt_target, indices in opt_targets.items(): # 48 graphs with capacity as fixed X value
+                for x_var_result in ["Capacity (KB)"]:
+                    df = form_dataframe_4way(indices, xname=x_var_result, yname=y_var_result)
+                    graph_multi_compare(df, opt_target, count, xname=x_var_result, yname=y_var_result, log=False, save=True)
+                    count += 1
+
+    elif option == "3way":
+        for y_var_result in ['Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)']: # exclude 3D RRAM
+            for opt_target, indices in opt_targets.items(): # 16 graphs with capacity as fixed X value
+                for x_var_result in ["Capacity (KB)"]:
+                    df = form_dataframe_3way(indices, xname=x_var_result, yname=y_var_result)
+                    graph_multi_compare(df, opt_target, count, xname=x_var_result, yname=y_var_result, log=False, save=True)
+                    count += 1
+
+
+def form_dataframe_2d(indices, xname, yname):
+    # Read Latency Optimized - RRAM cells
+    xaxis = df_nvs_2d.loc[indices[0]:indices[0] + 8][xname]  # 16 - 4096 KB
+    df0 = df_nvs_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC STTRAM NVS
+    df1 = df_dst_2d.loc[indices[0]:indices[0] + 8][yname]  # SLC STTRAM DST
+    df2 = df_nvs_2d.loc[indices[0] + 9*1:indices[0] + 9*1 + 8][yname]  # SLC SRAM NVS
+    df3 = df_dst_2d.loc[indices[0] + 9*1:indices[0] + 9*1 + 8][yname]  # SLC SRAM DST
+    df4 = df_nvs_2d.loc[indices[0] + 9*2:indices[0] + 9*2 + 8][yname]  # SLC RRAM NVS
+    df5 = df_dst_2d.loc[indices[0] + 9*2:indices[0] + 9*2 + 8][yname]  # SLC RRAM DST
+
+    # print(df0, df2, df4)
+    # drop removes Nan values
+    df = pd.concat([xaxis.reset_index(drop=True), df0.reset_index(drop=True), df1.reset_index(drop=True),
+                    df2.reset_index(drop=True), df3.reset_index(drop=True), df4.reset_index(drop=True),
+                    df5.reset_index(drop=True)], ignore_index=True, join="outer", axis=1)
+    # print(df)
+    # headers
+    df.columns = ["Capacity (KB)", "NVSim 2D SLC STTRAM", "Destiny 2D SLC STTRAM", "NVSim 2D SLC SRAM",
+                  "Destiny 2D SLC SRAM", "NVSim 2D SLC RRAM", "Destiny 2D SLC RRAM" ]
+    return df
+
+
+def comparison_2d(): # exclude PCRAM because NVSim didn't record it
+    opt_targets = {'Read Latency':               [0],
+                   'Write Latency':              [36],
+                   'Read Dynamic Energy':        [72],
+                   'Write Dynamic Energy':       [108],
+                   'Read Energy Delay Product':  [144],
+                   'Write Energy Delay Product': [180],
+                   'Leakage Power':              [216],
+                   'Area':                       [252]}
+
+    count = 0
+    # STTRAM SRAM RRAM   between NVSim and Destiny
+    for y_var_result in ['Total Area (um^2)', 'Read Latency (ns)', 'Write Latency (ns)', 'Read Bandwidth (GB/s)',
+                         'Write Bandwidth (GB/s)', 'Read Dynamic Energy (pJ)', 'Write Dynamic Energy (pJ)', 'Leakage Power (uW)']:
+        for opt_target, indices in opt_targets.items():  # 48 graphs with capacity as fixed X value
             for x_var_result in ["Capacity (KB)"]:
-                df = form_dataframe_4way(indices, xname=x_var_result, yname=y_var_result)
-                graph_rram(df, opt_target, count, xname=x_var_result, yname=y_var_result, save=True)
+                df = form_dataframe_2d(indices, xname=x_var_result, yname=y_var_result)
+                graph_multi_compare(df, opt_target, count, xname=x_var_result, yname=y_var_result, log=True, save=True)
                 count += 1
-    # """
-    # for y_var_result in ['Read Bandwidth (GB/s)', 'Write Bandwidth (GB/s)']: # exclude 3D RRAM
-    #     for opt_target, indices in opt_targets.items(): # 16 graphs with capacity as fixed X value
-    #         for x_var_result in ["Capacity (KB)"]:
-    #             df = form_dataframe_3way(indices, xname=x_var_result, yname=y_var_result)
-    #             graph_rram(df, opt_target, count, xname=x_var_result, yname=y_var_result, save=True)
-    #             count += 1
 
 
 if __name__ == "__main__":
@@ -787,7 +834,10 @@ if __name__ == "__main__":
         # create_plots("NVSIM 2D")
         # create_plots("DESTINY HD")
 
-        rram_4way_comparison()
+        # rram_multi_comparison(option="3way") # "3way", "4way"
+        rram_multi_comparison(option="4way") # "3way", "4way"
+
+        # comparison_2d()
 
     t1 = time.perf_counter()
 
